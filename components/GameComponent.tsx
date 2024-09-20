@@ -4,8 +4,8 @@ import React, { useState, useEffect, useReducer } from 'react';
 import Image from 'next/image';
 import { scorpion } from '@/app/images';
 import { getPlayerData, savePlayerData } from '@/app/hooks/indexedDBClient';
-import { useInitData } from '@telegram-apps/sdk-react'; // Import Telegram SDK
 import { Button, Placeholder, Title } from '@telegram-apps/telegram-ui';
+import WebApp from '@twa-dev/sdk'; // Import Telegram SDK
 
 interface GameComponentProps {
   initialBalance: number;
@@ -54,20 +54,29 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
+
 const GameComponent: React.FC<GameComponentProps> = ({ initialBalance, initialMiningLevel }) => {
-  const [balance, setBalance] = useState<number>(initialBalance);
-  const [miningLevel, setMiningLevel] = useState<number>(initialMiningLevel);
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const [lastHarvestTime, setLastHarvestTime] = useState<number>(Date.now());
-  const [lastExhaustedTime, setLastExhaustedTime] = useState<number | undefined>(undefined);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState<number>(0);
-  const initData = useInitData(); // Use Telegram init data
-
-  const COOLDOWN_PERIOD = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
-
-   // Load player data from IndexedDB when initData is available
-   useEffect(() => {
+    const [balance, setBalance] = useState<number>(initialBalance);
+    const [miningLevel, setMiningLevel] = useState<number>(initialMiningLevel);
+    const [state, dispatch] = useReducer(reducer, initialState);
+    const [lastHarvestTime, setLastHarvestTime] = useState<number>(Date.now());
+    const [lastExhaustedTime, setLastExhaustedTime] = useState<number | undefined>(undefined);
+    const [timeRemaining, setTimeRemaining] = useState<number>(0);
+    const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState<number>(0);
+    const [initData, setInitData] = useState<WebApp.InitData | null>(null); // Store initData
+  
+    const COOLDOWN_PERIOD = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
+  
+    // Initialize Telegram WebApp and get initData
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        WebApp.ready(); // Ensure the Telegram WebApp is ready
+        const tgInitData = WebApp.initDataUnsafe;
+        setInitData(tgInitData); // Store the Telegram initData
+      }
+    }, []);
+  // Load player data from IndexedDB when initData is available
+  useEffect(() => {
     const loadPlayerData = async () => {
       if (typeof window !== 'undefined' && initData?.user?.id) {
         try {
@@ -101,12 +110,12 @@ const GameComponent: React.FC<GameComponentProps> = ({ initialBalance, initialMi
           await savePlayerData({
             id: initData.user.id,
             username: initData.user.username,
-            firstName: initData.user.firstName,
-            lastName: initData.user.lastName,
-            photoUrl: initData.user.photoUrl,
-            isBot: initData.user.isBot,
-            isPremium: initData.user.isPremium,
-            languageCode: initData.user.languageCode,
+            firstName: initData.user.first_name,
+            lastName: initData.user.last_name,
+            photoUrl: initData.user.photo_url,
+            isBot: initData.user.is_bot,
+            isPremium: initData.user.is_premium,
+            languageCode: initData.user.language_code,
             balance,
             miningLevel,
             lastHarvestTime, // Ensure lastHarvestTime is saved correctly
