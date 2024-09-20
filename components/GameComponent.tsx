@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { scorpion } from '@/app/images';
 import { getPlayerData, savePlayerData } from '@/app/hooks/indexedDBClient';
 import { Button, Placeholder, Title } from '@telegram-apps/telegram-ui';
-import WebApp from '@twa-dev/sdk'; // Import Telegram SDK
+import WebApp from '@twa-dev/sdk';
 
 interface GameComponentProps {
   initialBalance: number;
@@ -16,6 +16,16 @@ interface State {
   energy: number;
   reward: number;
   isHolding: boolean;
+}
+
+// Define the interface for user data
+interface UserData {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code: string;
+  is_premium?: boolean;
 }
 
 type Action =
@@ -63,17 +73,28 @@ const GameComponent: React.FC<GameComponentProps> = ({ initialBalance, initialMi
     const [lastExhaustedTime, setLastExhaustedTime] = useState<number | undefined>(undefined);
     const [timeRemaining, setTimeRemaining] = useState<number>(0);
     const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState<number>(0);
-    const [initData, setInitData] = useState<WebApp.InitData | null>(null); // Store initData
+     const [userData, setUserData] = useState<UserData | null>(null);
+  const [userId, setUserId] = useState('');
+  const [initData, setInitData] = useState('');
+  const [startParam, setStartParam] = useState('');
   
     const COOLDOWN_PERIOD = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
   
     // Initialize Telegram WebApp and get initData
+    // Inside useEffect:
     useEffect(() => {
-      if (typeof window !== 'undefined') {
-        WebApp.ready(); // Ensure the Telegram WebApp is ready
-        const tgInitData = WebApp.initDataUnsafe;
-        setInitData(tgInitData); // Store the Telegram initData
-      }
+      const initWebApp = async () => {
+        if (typeof window !== 'undefined') {
+          const WebApp = (await import('@twa-dev/sdk')).default;
+          WebApp.ready();
+          setInitData(WebApp.initData);
+          setUserData(WebApp.initDataUnsafe.user as UserData);
+          setUserId(WebApp.initDataUnsafe.user?.id.toString() || '');
+          setStartParam(WebApp.initDataUnsafe.start_param || '');
+        }
+      };
+  
+      initWebApp();
     }, []);
   // Load player data from IndexedDB when initData is available
   useEffect(() => {
@@ -110,12 +131,12 @@ const GameComponent: React.FC<GameComponentProps> = ({ initialBalance, initialMi
           await savePlayerData({
             id: initData.user.id,
             username: initData.user.username,
-            firstName: initData.user.first_name,
-            lastName: initData.user.last_name,
-            photoUrl: initData.user.photo_url,
-            isBot: initData.user.is_bot,
-            isPremium: initData.user.is_premium,
-            languageCode: initData.user.language_code,
+            firstName: initData.user.firstName,
+            lastName: initData.user.lastName,
+            photoUrl: initData.user.photoUrl,
+            isBot: initData.user.isBot,
+            isPremium: initData.user.isPremium,
+            languageCode: initData.user.languageCode,
             balance,
             miningLevel,
             lastHarvestTime, // Ensure lastHarvestTime is saved correctly
