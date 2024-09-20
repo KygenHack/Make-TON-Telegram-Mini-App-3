@@ -154,7 +154,7 @@ export default function GameComponent() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Image src={scorpion} alt="Scorpion" layout="fill" />
+          <Image src={scorpion} alt="Scorpion" />
         </motion.div>
       </div>
         {/* Energy and Status Display */}

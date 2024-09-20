@@ -4,7 +4,6 @@ import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
 import NavTop from '@/components/NavTop';
 import WebApp from '@twa-dev/sdk';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 // Define the interface for user data
@@ -25,12 +24,12 @@ interface GameData {
   isHolding: boolean;
 }
 
-export default async function HomePage() {
+// Main component definition with a proper name
+function MainPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState('');
   const [initData, setInitData] = useState('');
   const [startParam, setStartParam] = useState('');
- 
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -49,21 +48,21 @@ export default async function HomePage() {
 
   return (
     <>
-    <div className="bg-black min-h-screen flex flex-col">
-      <NavTop />
-      <div className="flex-grow w-full bg-fish mt-4 rounded-t-[16px] relative top-glow z-0">
-        <div className="absolute top-[2px] left-0 right-0 bottom-0 bg-[#1d2025] rounded-t-[16px] p-6 carpet33">
-          <div className="justify-center items-center">
-        <GameComponent/>
+      <div className="bg-black min-h-screen flex flex-col">
+        <NavTop />
+        <div className="flex-grow w-full bg-fish mt-4 rounded-t-[16px] relative top-glow z-0">
+          <div className="absolute top-[2px] left-0 right-0 bottom-0 bg-[#1d2025] rounded-t-[16px] p-6 carpet33">
+            <div className="justify-center items-center">
+              <GameComponent />
+            </div>
           </div>
-    
         </div>
       </div>
+      <div className="fixed bottom-0 left-0 right-0">
+        <NavBar />
       </div>
-      <div className="fixed bottom-0 left-0 right-0" >
-              <NavBar/>
-            </div>
     </>
-    
   );
 }
+
+export default MainPage;
