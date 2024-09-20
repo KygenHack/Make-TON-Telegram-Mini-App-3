@@ -31,3 +31,83 @@ body {
     text-wrap: balance;
   }
 }
+
+.carpet {
+  padding-top: 2rem;
+  padding-bottom: 50rem;
+}
+
+
+.bg-seatop {
+  /* --tw-bg-opacity: 1; */
+  background: linear-gradient(195deg, #000, #fff);
+}
+
+.fish{
+  margin-top: 347px;
+}
+
+.task-btn {
+  background-color: #ca25e8;
+  color: #fff;
+  font-size: .875rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  text-align: center;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 15px;
+}
+
+:where(.menu li) {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.carpet3 {
+  padding-top: 6rem;
+  padding-bottom: 12rem;
+}
+
+.bg-fish {
+  --tw-bg-opacity: 1;
+  background: linear-gradient(179deg, #f48d2f, #ffffff);
+}
+
+.carpet2 {
+  padding-top: 1rem;
+  padding-bottom: 25rem;
+}
+
+.custom-width{
+    width: calc(100% - -2rem);
+}
+
+.custom-padding{
+    padding: 6px 0px 6px;
+}
+
+.custom-active {
+  width: 28%;
+}
+
+.mt-custom { 
+  margin-top: 2.5rem;
+}
+
+.carpet33 {
+  padding-top: 2rem;
+  padding-bottom: 49rem;
+}
