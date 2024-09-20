@@ -4,6 +4,7 @@ import NavBar from '@/components/NavBar';
 import NavTop from '@/components/NavTop';
 import ReferralSystem from '@/components/ReferralSystem'
 import { useEffect, useState } from 'react'
+import WebApp from '@twa-dev/sdk'
 
 // Define the interface for user data
 interface UserData {
