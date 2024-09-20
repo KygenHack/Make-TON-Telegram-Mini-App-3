@@ -25,7 +25,7 @@ interface GameData {
   isHolding: boolean;
 }
 
-export default function () {
+export default async function HomePage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState('');
   const [initData, setInitData] = useState('');

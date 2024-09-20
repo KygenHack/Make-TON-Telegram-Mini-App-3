@@ -35,7 +35,7 @@ interface Task {
   reward: number;
 }
 
-export default function ProfessionalScorpionGame() {
+export default function GameComponent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [state, setState] = useState<GameState>({
     scorpionsCaught: 0,
