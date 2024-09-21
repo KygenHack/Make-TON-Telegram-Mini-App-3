@@ -148,15 +148,15 @@ export default function GameComponent() {
        <div className="flex justify-center mt-6">
        <motion.div
   className={`relative w-[250px] h-[250px] rounded-full border-8 border-[#f48d2f] flex items-center justify-center cursor-pointer ${cooldownTimeRemaining > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-  onMouseDown={handleHoldStart}
-  onMouseUp={handleHoldRelease}
-  onTouchStart={handleHoldStart}
-  onTouchEnd={handleHoldRelease}
+  onMouseDown={cooldownTimeRemaining === 0 ? handleHoldStart : undefined}
+  onMouseUp={cooldownTimeRemaining === 0 ? handleHoldRelease : undefined}
+  onTouchStart={cooldownTimeRemaining === 0 ? handleHoldStart : undefined}
+  onTouchEnd={cooldownTimeRemaining === 0 ? handleHoldRelease : undefined}
   onContextMenu={(e) => e.preventDefault()} // Preventing the context menu
   whileHover={{ scale: 1.05 }}
   whileTap={{ scale: 0.95 }}
 >
-  <Image src={scorpion} alt="Scorpion" className="object-cover" />
+  <Image src={scorpion} alt="Scorpion" className="object-cover no-select" unselectable="on" />
   {state.isHolding && (
     <motion.div
       className="absolute inset-0 bg-[#f48d2f] opacity-30 rounded-full flex justify-center items-center"
