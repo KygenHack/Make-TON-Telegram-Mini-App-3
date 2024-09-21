@@ -144,18 +144,31 @@ export default function GameComponent() {
           <p className="text-lg text-[#f48d2f]">Catching <strong>{state.reward} scorpions</strong></p>
         </div>
       </div>
-      <div className="flex justify-center mt-6">
-        <motion.div
-          className={`relative w-[250px] h-[250px] rounded-full border-8 border-[#f48d2f] flex items-center justify-center cursor-pointer ${cooldownTimeRemaining > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onMouseDown={handleHoldStart}
-          onMouseUp={handleHoldRelease}
-          onTouchStart={handleHoldStart}
-          onTouchEnd={handleHoldRelease}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Image src={scorpion} alt="Scorpion" />
-        </motion.div>
+       {/* Scorpion Hold Interaction */}
+       <div className="flex justify-center mt-6">
+       <motion.div
+  className={`relative w-[250px] h-[250px] rounded-full border-8 border-[#f48d2f] flex items-center justify-center cursor-pointer ${cooldownTimeRemaining > 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+  onMouseDown={handleHoldStart}
+  onMouseUp={handleHoldRelease}
+  onTouchStart={handleHoldStart}
+  onTouchEnd={handleHoldRelease}
+  onContextMenu={(e) => e.preventDefault()} // Preventing the context menu
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+>
+  <Image src={scorpion} alt="Scorpion" className="object-cover" />
+  {state.isHolding && (
+    <motion.div
+      className="absolute inset-0 bg-[#f48d2f] opacity-30 rounded-full flex justify-center items-center"
+      initial={{ scale: 1 }}
+      animate={{ scale: 1.1 }}
+      transition={{ duration: 0.5, yoyo: Infinity }}
+    >
+      <p className="text-white text-2xl animate-pulse">{state.reward} Scorpions</p>
+    </motion.div>
+  )}
+</motion.div>
+
       </div>
         {/* Energy and Status Display */}
         <div className="flex justify-between items-center mt-custom">
