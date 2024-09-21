@@ -70,11 +70,20 @@ export default function GameComponent() {
           miningLevel: 1,
           lastHarvestTime: Date.now(),
           lastExhaustedTime: Date.now(),
-          energy: 0
+          energy: 0,
+          cooldownEndTime: 0 // Initialize cooldownEndTime to 0
         });
       } else {
+        // Restore balance, energy, and cooldown from IndexedDB
         setBalance(playerData.balance);
         setState(s => ({ ...s, energy: playerData.energy }));
+
+        // Check if cooldown is active
+        const now = Date.now();
+        if (playerData.cooldownEndTime && playerData.cooldownEndTime > now) {
+          const remainingCooldown = Math.floor((playerData.cooldownEndTime - now) / 1000);
+          setCooldownTimeRemaining(remainingCooldown);
+        }
       }
     };
 
@@ -141,7 +150,6 @@ export default function GameComponent() {
     }
   };
   
-
   const handleHoldRelease = async () => {
     if (state.isHolding) {
       clearInterval(holdIntervalRef.current!);
@@ -162,9 +170,11 @@ export default function GameComponent() {
       }));
 
       setBalance(newBalance);
-      setCooldownTimeRemaining(3 * 3600);
+      const cooldownDuration = 3 * 3600; // 3 hours cooldown
+      const cooldownEndTime = Date.now() + cooldownDuration * 1000;
+      setCooldownTimeRemaining(cooldownDuration);
 
-      // Save player data to IndexedDB
+      // Save player data to IndexedDB, including cooldownEndTime
       await savePlayerData({
         id: userData!.id,
         balance: newBalance,
@@ -172,6 +182,7 @@ export default function GameComponent() {
         miningLevel: 1, // Update with your current logic
         lastHarvestTime: Date.now(),
         lastExhaustedTime: Date.now(),
+        cooldownEndTime // Save cooldown end time
       });
     }
   };

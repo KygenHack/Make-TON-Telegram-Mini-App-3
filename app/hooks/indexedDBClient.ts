@@ -1,6 +1,5 @@
 import { openDB } from 'idb';
 
-// Define the PlayerData type, including additional fields from Telegram and tracking harvest and energy depletion
 interface PlayerData {
   energy: number;
   id: number; // Telegram user ID
@@ -16,9 +15,11 @@ interface PlayerData {
   lastHarvestTime: number; // Timestamp of the last harvest
   lastExhaustedTime: number; // Timestamp of when the energy was exhausted
   lastEnergyDepletionTime?: number; // Timestamp when energy was depleted
+  cooldownEndTime?: number; // Timestamp of when the cooldown ends
   referrerId?: number; // ID of the referrer
   referredPlayers?: number[]; // List of referred players' IDs
 }
+
 
 // Open the IndexedDB database and handle version upgrades
 const dbPromise = openDB('ScorpionGameDB', 2, {
