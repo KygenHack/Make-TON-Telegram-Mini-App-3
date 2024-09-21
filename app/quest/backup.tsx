@@ -3,9 +3,9 @@
 import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
 import NavTop from '@/components/NavTop';
+import TaskComponent from '@/components/TaskComponent';
 import WebApp from '@twa-dev/sdk';
 import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 
 // Define the interface for user data
 interface UserData {
@@ -26,14 +26,11 @@ interface GameData {
 }
 
 // Main component definition with a proper name
-function MainPage() {
+function QuestPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState('');
   const [initData, setInitData] = useState('');
   const [startParam, setStartParam] = useState('');
- 
-
-  
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -50,9 +47,6 @@ function MainPage() {
     initWebApp();
   }, []);
 
-  // Dynamically import the GameComponent
-const TaskComponent = dynamic(() => import('@/components/TaskComponent'), { ssr: false });
-
   return (
     <>
       <div className="bg-black min-h-screen flex flex-col">
@@ -60,7 +54,7 @@ const TaskComponent = dynamic(() => import('@/components/TaskComponent'), { ssr:
         <div className="flex-grow w-full bg-fish mt-4 rounded-t-[16px] relative top-glow z-0">
           <div className="absolute top-[2px] left-0 right-0 bottom-0 bg-[#1d2025] rounded-t-[16px] p-6 carpet33">
             <div className="justify-center items-center">
-            <TaskComponent />
+              <TaskComponent/>
             </div>
           </div>
         </div>
@@ -72,4 +66,4 @@ const TaskComponent = dynamic(() => import('@/components/TaskComponent'), { ssr:
   );
 }
 
-export default MainPage;
+export default QuestPage;
