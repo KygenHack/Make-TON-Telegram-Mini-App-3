@@ -6,6 +6,9 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { scorpion } from '@/app/images';
 import { Title } from '@telegram-apps/telegram-ui';
+import { getPlayerData, initializePlayerData, updatePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import your DB functions
+
+
 
 // Define user data interface
 interface UserData {
@@ -55,11 +58,32 @@ export default function GameComponent() {
     const initWebApp = async () => {
       const WebApp = (await import('@twa-dev/sdk')).default;
       WebApp.ready();
-      setUserData(WebApp.initDataUnsafe.user as UserData);
+      const user = WebApp.initDataUnsafe.user as UserData;
+      setUserData(user);
+      const playerData = await getPlayerData(user.id);
+      if (!playerData) {
+        await initializePlayerData({
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          username: user.username,
+          languageCode: user.language_code,
+          balance: 0,
+          miningLevel: 1,
+          lastHarvestTime: Date.now(),
+          lastExhaustedTime: Date.now(),
+          energy: 0
+        });
+      } else {
+        setBalance(playerData.balance);
+        setState(s => ({ ...s, energy: playerData.energy }));
+      }
     };
 
     initWebApp();
   }, []);
+
+
 
   useEffect(() => {
     if (cooldownTimeRemaining > 0) {
