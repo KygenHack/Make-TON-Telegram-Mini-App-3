@@ -1,4 +1,5 @@
 import { openDB } from 'idb';
+import { supabase } from './useSupabase';
 
 interface PlayerData {
   energy: number;
@@ -20,7 +21,6 @@ interface PlayerData {
   referredPlayers?: number[]; // List of referred players' IDs
 }
 
-
 // Open the IndexedDB database and handle version upgrades
 const dbPromise = openDB('ScorpionGameDB', 2, {
   upgrade(db, oldVersion) {
@@ -31,19 +31,49 @@ const dbPromise = openDB('ScorpionGameDB', 2, {
   },
 });
 
-// Fetch player data from the database by ID
-export const getPlayerData = async (id: number): Promise<PlayerData | undefined> => {
-  const db = await dbPromise;
-  return db.get('playerData', id);
-};
-
-// Save player data to the database, updating existing records or adding new ones
+// Function to save player data to both IndexedDB and Supabase
 export const savePlayerData = async (playerData: PlayerData): Promise<void> => {
   const db = await dbPromise;
   await db.put('playerData', playerData);
+
+  // Save to Supabase, using 'id' as the conflict resolution column
+  const { error } = await supabase
+    .from('players')
+    .upsert([playerData], { onConflict: 'id' });
+
+  if (error) {
+    console.error('Error saving player data to Supabase:', error);
+  }
 };
 
-// Utility function to update only certain fields in the player data
+// Function to fetch player data from IndexedDB or Supabase
+export const getPlayerData = async (id: number): Promise<PlayerData | undefined> => {
+  const db = await dbPromise;
+  const playerData = await db.get('playerData', id);
+
+  // If player data doesn't exist in IndexedDB, fetch it from Supabase
+  if (!playerData) {
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching player data from Supabase:', error);
+      return undefined;
+    }
+
+    if (data) {
+      await savePlayerData(data); // Save fetched data back to IndexedDB
+      return data;
+    }
+  }
+
+  return playerData;
+};
+
+// Function to update only certain fields in the player data and save to Supabase
 export const updatePlayerData = async (id: number, updates: Partial<PlayerData>): Promise<void> => {
   const db = await dbPromise;
   const existingData = await db.get('playerData', id);
@@ -51,13 +81,23 @@ export const updatePlayerData = async (id: number, updates: Partial<PlayerData>)
   if (existingData) {
     const updatedData = { ...existingData, ...updates };
     await db.put('playerData', updatedData);
-    console.log(`Player ${id} data updated.`);
+
+    // Update in Supabase
+const { error } = await supabase
+.from('players')
+.upsert([updatedData], { onConflict: 'id' });
+
+    if (error) {
+      console.error('Error updating player data in Supabase:', error);
+    } else {
+      console.log(`Player ${id} data updated.`);
+    }
   } else {
     throw new Error(`Player with id ${id} does not exist.`);
   }
 };
 
-// Function to update the player's balance when they perform game actions (e.g., catching scorpions)
+// Function to update the player's balance and save to Supabase
 export const updatePlayerBalance = async (id: number, amount: number): Promise<void> => {
   const playerData = await getPlayerData(id);
 
