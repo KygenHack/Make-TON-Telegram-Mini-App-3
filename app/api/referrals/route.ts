@@ -1,47 +1,26 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/app/hooks/useSupabase';
+import { getReferrals, getReferrer, saveReferral } from '@/lib/storage';
+import { NextRequest, NextResponse } from 'next/server';
 
-// POST method for saving a referral
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { userId, referrerId } = body;
-
-  try {
-    const { error } = await supabase
-      .from('referrals')
-      .insert([{ user_id: userId, referrer_id: referrerId }]);
-
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ message: 'Referral saved successfully' }, { status: 200 });
-  } catch (error) {
-    const err = error as Error; // Explicitly cast error to Error
-    console.error('Error saving referral:', err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+export async function POST(request: NextRequest) {
+  const { userId, referrerId } = await request.json();
+  
+  if (!userId || !referrerId) {
+    return NextResponse.json({ error: 'Missing userId or referrerId' }, { status: 400 });
   }
+
+  saveReferral(userId, referrerId);
+  return NextResponse.json({ success: true });
 }
 
-// GET method for fetching referrals
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const referrerId = searchParams.get('referrerId');
-
-  try {
-    const { data, error } = await supabase
-      .from('referrals')
-      .select('user_id')
-      .eq('referrer_id', referrerId);
-
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ referrals: data.map((row) => row.user_id) }, { status: 200 });
-  } catch (error) {
-    const err = error as Error; // Explicitly cast error to Error
-    console.error('Error fetching referrals:', err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+export async function GET(request: NextRequest) {
+  const userId = request.nextUrl.searchParams.get('userId');
+  
+  if (!userId) {
+    return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
   }
+
+  const referrals = getReferrals(userId);
+  const referrer = getReferrer(userId);
+
+  return NextResponse.json({ referrals, referrer });
 }
