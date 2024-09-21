@@ -8,8 +8,6 @@ import { scorpion } from '@/app/images';
 import { Title } from '@telegram-apps/telegram-ui';
 import { getPlayerData, initializePlayerData, updatePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import your DB functions
 
-
-
 // Define user data interface
 interface UserData {
   id: number;
