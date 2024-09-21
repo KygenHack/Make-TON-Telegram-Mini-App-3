@@ -3,30 +3,30 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HomeIcon, UserGroupIcon, CurrencyDollarIcon, LightningBoltIcon } from '@heroicons/react/solid'; // Using Heroicons for a professional look
+import { HomeIcon, UserGroupIcon, LightningBoltIcon, TagIcon } from '@heroicons/react/solid'; // Using Heroicons for a professional look
 
 const NavBar = () => {
   const pathname = usePathname();
 
-  // Styles for active and inactive states with explicit type for isActive
+  // Styles for active and inactive links
   const linkStyle = (isActive: boolean) =>
-    `flex flex-col items-center justify-center custom-active p-2 rounded-lg transition-colors duration-300 ${
-      isActive ? 'text-black bg-white shadow-md' : 'text-gray-400 hover:text-white'
+    `flex flex-col items-center justify-center p-2 rounded-lg transition-colors duration-300 ${
+      isActive ? 'text-white bg-gray-800 shadow-lg' : 'text-gray-400 hover:text-white'
     }`;
 
   return (
-    <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 custom-width max-w-xl bg-black backdrop-blur-lg border border-gray-700 shadow-xl flex justify-around items-center z-50 rounded-3xl text-sm custom-padding">
+    <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-xl bg-black backdrop-blur-lg border border-gray-700 shadow-xl flex justify-around items-center z-50 rounded-3xl text-sm py-2 px-4">
       <Link href="/" className={linkStyle(pathname === '/')} aria-label="Home">
-      <LightningBoltIcon className="w-6 h-6" />
-      <p className="mt-1">Earn</p>
-      </Link>
-     
-      <Link href="/leaderboard" className={linkStyle(pathname === '/leaderboard')} aria-label="Leaderboard">
-        <CurrencyDollarIcon className="w-6 h-6" />
-        <p className="mt-1">Leaderboard</p>
+        <LightningBoltIcon className="w-6 h-6" />
+        <p className="mt-1">Home</p>
       </Link>
 
-      <Link href="/friends" className={linkStyle(pathname === '/friends')} aria-label="Friends">
+      <Link href="/quest" className={linkStyle(pathname === '/quest')} aria-label="Quest">
+        <TagIcon className="w-6 h-6" />
+        <p className="mt-1">Quest</p>
+      </Link>
+
+      <Link href="/frens" className={linkStyle(pathname === '/frens')} aria-label="Friends">
         <UserGroupIcon className="w-6 h-6" />
         <p className="mt-1">Friends</p>
       </Link>

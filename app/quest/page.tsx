@@ -26,7 +26,7 @@ interface GameData {
 }
 
 // Main component definition with a proper name
-function TaskPage() {
+function QuestPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState('');
   const [initData, setInitData] = useState('');
@@ -66,4 +66,4 @@ function TaskPage() {
   );
 }
 
-export default TaskPage;
+export default QuestPage;
