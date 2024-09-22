@@ -1,12 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { scorpion } from '@/app/images';
+import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug } from 'react-icons/fa';
+import { getPlayerData, initializePlayerData, savePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient';
 import { Title } from '@telegram-apps/telegram-ui';
-import { getPlayerData, initializePlayerData, savePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import your DB functions
-import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug, FaFlagCheckered, FaLevelUpAlt, FaTools } from 'react-icons/fa';
-import Image from 'next/image';
 
 // Define user data interface
 interface UserData {
@@ -25,6 +22,7 @@ interface Task {
   description: string;
   completed: boolean;
   reward: number;
+  requiredBalance?: number; // Added balance requirement for certain tasks
 }
 
 // Define game state interface
@@ -34,9 +32,8 @@ interface GameState {
   isHolding: boolean;
   reward: number;
   tasks: Task[];
-  level: number;  // Add level to the game state
-  holdDuration: number; // Add hold duration tracking
-
+  level: number;
+  holdDuration: number;
 }
 
 export default function TaskComponent() {
@@ -46,14 +43,13 @@ export default function TaskComponent() {
     energy: 100,
     isHolding: false,
     reward: 0,
-    level: 1,  // Initial player level
-    holdDuration: 0, // Add holdDuration initialization
+    level: 1,
+    holdDuration: 0,
     tasks: [
-      { id: 1, description: "Catch 50 scorpions in one hold", completed: false, reward: 50 },
-      { id: 2, description: "Hold for a total of 300 seconds", completed: false, reward: 30 },
+      { id: 1, description: 'Catch 50 scorpions in one hold', completed: false, reward: 50, requiredBalance: 500 },
+      { id: 2, description: 'Hold for a total of 300 seconds', completed: false, reward: 30, requiredBalance: 300 },
     ],
   });
-  
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -64,7 +60,7 @@ export default function TaskComponent() {
     { platform: 'Telegram', task: 'Join our TG channel', link: 'https://t.me/example_channel', reward: 10 },
     { platform: 'Telegram', task: 'Join our TG Community', link: 'https://t.me/example_channel', reward: 10 },
     { platform: 'Twitter', task: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8 },
-    { platform: 'Facebook', task: 'Like us Facebook ', link: 'https://facebook.com/example_page', reward: 5 },
+    { platform: 'Facebook', task: 'Like us on Facebook', link: 'https://facebook.com/example_page', reward: 5 },
     { platform: 'YouTube', task: 'Subscribe to our YouTube channel', link: 'https://youtube.com/example_channel', reward: 7 },
     { platform: 'Instagram', task: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6 },
   ];
@@ -76,6 +72,7 @@ export default function TaskComponent() {
       WebApp.ready();
       const user = WebApp.initDataUnsafe.user as UserData;
       setUserData(user);
+
       const playerData = await getPlayerData(user.id);
       if (!playerData) {
         await initializePlayerData({
@@ -89,18 +86,14 @@ export default function TaskComponent() {
           lastHarvestTime: Date.now(),
           lastExhaustedTime: Date.now(),
           energy: 0,
-          cooldownEndTime: 0, // Initialize cooldownEndTime to 0
+          cooldownEndTime: 0,
         });
       } else {
-        // Restore balance, energy, and cooldown from IndexedDB
         setBalance(playerData.balance);
         setState((s) => ({ ...s, energy: playerData.energy }));
-
-        // Check if cooldown is active
         const now = Date.now();
         if (playerData.cooldownEndTime && playerData.cooldownEndTime > now) {
-          const remainingCooldown = Math.floor((playerData.cooldownEndTime - now) / 1000);
-          setCooldownTimeRemaining(remainingCooldown);
+          setCooldownTimeRemaining(Math.floor((playerData.cooldownEndTime - now) / 1000));
         }
       }
     };
@@ -108,6 +101,7 @@ export default function TaskComponent() {
     initWebApp();
   }, []);
 
+  // Handle cooldown time update
   useEffect(() => {
     if (cooldownTimeRemaining > 0) {
       const cooldownInterval = setInterval(() => {
@@ -119,101 +113,22 @@ export default function TaskComponent() {
     }
   }, [cooldownTimeRemaining, state.isHolding, state.energy]);
 
-  
-
-  const handleHoldStart = () => {
-    if (state.energy > 0 && !state.isHolding) {
-      setState((prev) => ({ ...prev, isHolding: true }));
-      const startTime = Date.now();
-
-      const intervalHandler = async () => {
-        const duration = (Date.now() - startTime) / 1000;
-
-        const updatedTasks = [...state.tasks];
-        for (let i = 0; i < updatedTasks.length; i++) {
-          const task = updatedTasks[i];
-          if (!task.completed && ((task.id === 2 && duration >= 300) || (task.id === 1 && state.reward + 1 >= 50))) {
-            const newBalance = balance + task.reward;
-            setBalance(newBalance);
-            await updatePlayerBalance(userData!.id, task.reward);
-            updatedTasks[i] = { ...task, completed: true, reward: 0 }; // Mark as completed
-          }
-        }
-
-        setState((prev) => {
-          if (prev.energy > 0) {
-            const newState = {
-              ...prev,
-              tasks: updatedTasks,
-              reward: prev.reward + 1,
-              energy: Math.max(prev.energy - 1, 0),
-            };
-            savePlayerData({
-              id: userData!.id,
-              balance,
-              energy: newState.energy,
-              miningLevel: 1, // Update with your current logic
-              lastHarvestTime: Date.now(),
-              lastExhaustedTime: Date.now(),
-            });
-            return newState;
-          } else {
-            handleHoldRelease();
-            return prev;
-          }
-        });
-      };
-
-      holdIntervalRef.current = setInterval(intervalHandler, 1000);
-    }
-  };
-
-  const handleHoldRelease = async () => {
-    if (state.isHolding) {
-      clearInterval(holdIntervalRef.current!);
-      holdIntervalRef.current = null;
-
-      const updatedTasks = state.tasks.map((task) => {
-        return task.completed ? { ...task, reward: 0 } : task;
-      });
-
-      const newBalance = balance + state.reward;
-      setState((prev) => ({
-        ...prev,
-        scorpionsCaught: prev.scorpionsCaught + prev.reward,
-        reward: 0,
-        isHolding: false,
-        tasks: updatedTasks,
-      }));
-
-      setBalance(newBalance);
-      const cooldownDuration = 3 * 3600; // 3 hours cooldown
-      const cooldownEndTime = Date.now() + cooldownDuration * 1000;
-      setCooldownTimeRemaining(cooldownDuration);
-
-      await savePlayerData({
-        id: userData!.id,
-        balance: newBalance,
-        energy: state.energy,
-        miningLevel: 1,
-        lastHarvestTime: Date.now(),
-        lastExhaustedTime: Date.now(),
-        cooldownEndTime,
-      });
-    }
-  };
-
-  // Task completion logic for social tasks
+  // Task completion logic including balance validation
   const handleTaskComplete = async (taskId: number) => {
     const updatedTasks = state.tasks.map((task) => {
       if (task.id === taskId && !task.completed) {
-        const newBalance = balance + task.reward;
-        setBalance(newBalance);
-        setState((prevState) => ({
-          ...prevState,
-          tasks: prevState.tasks.map((t) => (t.id === task.id ? { ...t, completed: true } : t)),
-        }));
-        updatePlayerBalance(userData!.id, task.reward);
+        if (balance >= (task.requiredBalance || 0)) {
+          // If player has enough balance for the task
+          const newBalance = balance + task.reward;
+          setBalance(newBalance);
+          setState((prevState) => ({
+            ...prevState,
+            tasks: prevState.tasks.map((t) => (t.id === task.id ? { ...t, completed: true } : t)),
+          }));
+          updatePlayerBalance(userData!.id, task.reward);
+        } else {
+          alert("You don't have enough balance to complete this task.");
+        }
       }
       return task;
     });
@@ -240,7 +155,6 @@ export default function TaskComponent() {
             {balance}
           </Title>
           <p className="text-lg text-[#f48d2f]">Complete tasks to earn Scorpion rewards</p>
-          <p className="text-md text-[#f48d2f]">Player Level: {state.level}</p> {/* Display player level */}
         </div>
       </div>
 
@@ -274,22 +188,24 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <button
-  onClick={() => handleTaskComplete(task.id)}
-  disabled={
-    task.completed || 
-    (task.id === 1 && state.scorpionsCaught < 50) || // Validate scorpions caught for Task 1
-    (task.id === 2 && !state.isHolding && state.holdDuration < 300) // Validate hold time for Task 2
-  }
-  className={`py-2 px-4 rounded-lg shadow-md ${
-    task.completed || 
-    (task.id === 1 && state.scorpionsCaught < 50) || // Disabled if scorpions caught < 50
-    (task.id === 2 && !state.isHolding && state.holdDuration < 300) // Disabled if hold time < 300
-      ? 'bg-gray-500 cursor-not-allowed' 
-      : 'bg-blue-600 hover:bg-blue-700 text-white'
-  }`}
->
-  {task.completed ? 'Done' : 'Claim'}
-</button>
+                  onClick={() => handleTaskComplete(task.id)}
+                  disabled={
+                    task.completed ||
+                    (task.requiredBalance && balance < task.requiredBalance) || // Disable if player balance is too low
+                    (task.id === 1 && state.scorpionsCaught < 50) || // Validate scorpions caught for Task 1
+                    (task.id === 2 && state.holdDuration < 300) // Validate hold time for Task 2
+                  }
+                  className={`py-2 px-4 rounded-lg shadow-md ${
+                    task.completed ||
+                    (task.requiredBalance && balance < task.requiredBalance) ||
+                    (task.id === 1 && state.scorpionsCaught < 50) ||
+                    (task.id === 2 && state.holdDuration < 300)
+                      ? 'bg-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {task.completed ? 'Done' : 'Claim'}
+                </button>
               </div>
             ))}
           </div>
