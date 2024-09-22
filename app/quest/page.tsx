@@ -2,7 +2,6 @@
 
 import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
-import NavTop from '@/components/NavTop';
 import WebApp from '@twa-dev/sdk';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -32,9 +31,6 @@ function MainPage() {
   const [initData, setInitData] = useState('');
   const [startParam, setStartParam] = useState('');
  
-
-  
-
   useEffect(() => {
     const initWebApp = async () => {
       if (typeof window !== 'undefined') {
@@ -52,6 +48,7 @@ function MainPage() {
 
   // Dynamically import the GameComponent
 const TaskComponent = dynamic(() => import('@/components/TaskComponent'), { ssr: false });
+const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
 
   return (
     <>
@@ -71,5 +68,8 @@ const TaskComponent = dynamic(() => import('@/components/TaskComponent'), { ssr:
     </>
   );
 }
+
+
+
 
 export default MainPage;

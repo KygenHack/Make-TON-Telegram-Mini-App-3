@@ -1,12 +1,15 @@
 'use client';
 
-import WebApp from '@twa-dev/sdk';
-import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { scorpion } from '@/app/images';
 import { Title } from '@telegram-apps/telegram-ui';
 import { getPlayerData, initializePlayerData, savePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import your DB functions
+import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug, FaFlagCheckered, FaLevelUpAlt, FaTools } from 'react-icons/fa';
+import Image from 'next/image';
+
+
+
 
 // Define user data interface
 interface UserData {
@@ -19,6 +22,14 @@ interface UserData {
   photoUrl?: string;
 }
 
+// Define task structure
+interface Task {
+  id: number;
+  description: string;
+  completed: boolean;
+  reward: number;
+}
+
 // Define game state interface
 interface GameState {
   scorpionsCaught: number;
@@ -26,14 +37,9 @@ interface GameState {
   isHolding: boolean;
   reward: number;
   tasks: Task[];
-}
+  level: number;  // Add level to the game state
+  holdDuration: number; // Add hold duration tracking
 
-// Define task structure
-interface Task {
-  id: number;
-  description: string;
-  completed: boolean;
-  reward: number;
 }
 
 export default function GameComponent() {
@@ -43,15 +49,30 @@ export default function GameComponent() {
     energy: 100,
     isHolding: false,
     reward: 0,
+    level: 1,  // Initial player level
+    holdDuration: 0, // Add holdDuration initialization
     tasks: [
       { id: 1, description: "Catch 50 scorpions in one hold", completed: false, reward: 50 },
-      { id: 2, description: "Hold for a total of 300 seconds", completed: false, reward: 30 }
+      { id: 2, description: "Hold for a total of 300 seconds", completed: false, reward: 30 },
     ],
   });
+  
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
 
+  // Add social tasks
+  const socialTasks = [
+    { platform: 'Telegram', task: 'Join our TG channel', link: 'https://t.me/example_channel', reward: 10 },
+    { platform: 'Telegram', task: 'Join our TG Community', link: 'https://t.me/example_channel', reward: 10 },
+    { platform: 'Twitter', task: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8 },
+    { platform: 'Facebook', task: 'Like us Facebook ', link: 'https://facebook.com/example_page', reward: 5 },
+    { platform: 'YouTube', task: 'Subscribe to our YouTube channel', link: 'https://youtube.com/example_channel', reward: 7 },
+    { platform: 'Instagram', task: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6 },
+  ];
+
+  // Initialize player data
   useEffect(() => {
     const initWebApp = async () => {
       const WebApp = (await import('@twa-dev/sdk')).default;
@@ -71,12 +92,12 @@ export default function GameComponent() {
           lastHarvestTime: Date.now(),
           lastExhaustedTime: Date.now(),
           energy: 0,
-          cooldownEndTime: 0 // Initialize cooldownEndTime to 0
+          cooldownEndTime: 0, // Initialize cooldownEndTime to 0
         });
       } else {
         // Restore balance, energy, and cooldown from IndexedDB
         setBalance(playerData.balance);
-        setState(s => ({ ...s, energy: playerData.energy }));
+        setState((s) => ({ ...s, energy: playerData.energy }));
 
         // Check if cooldown is active
         const now = Date.now();
@@ -93,23 +114,24 @@ export default function GameComponent() {
   useEffect(() => {
     if (cooldownTimeRemaining > 0) {
       const cooldownInterval = setInterval(() => {
-        setCooldownTimeRemaining(prev => prev - 1);
+        setCooldownTimeRemaining((prev) => prev - 1);
       }, 1000);
       return () => clearInterval(cooldownInterval);
     } else if (cooldownTimeRemaining === 0 && !state.isHolding && state.energy < 100) {
-      setState(prev => ({ ...prev, energy: 100 }));
+      setState((prev) => ({ ...prev, energy: 100 }));
     }
   }, [cooldownTimeRemaining, state.isHolding, state.energy]);
 
+  
+
   const handleHoldStart = () => {
     if (state.energy > 0 && !state.isHolding) {
-      setState(prev => ({ ...prev, isHolding: true }));
+      setState((prev) => ({ ...prev, isHolding: true }));
       const startTime = Date.now();
-  
+
       const intervalHandler = async () => {
         const duration = (Date.now() - startTime) / 1000;
-        
-        // Separate async logic to handle task updates
+
         const updatedTasks = [...state.tasks];
         for (let i = 0; i < updatedTasks.length; i++) {
           const task = updatedTasks[i];
@@ -117,11 +139,11 @@ export default function GameComponent() {
             const newBalance = balance + task.reward;
             setBalance(newBalance);
             await updatePlayerBalance(userData!.id, task.reward);
-            updatedTasks[i] = { ...task, completed: true, reward: 0 };  // Mark as completed and reset reward to prevent re-application
+            updatedTasks[i] = { ...task, completed: true, reward: 0 }; // Mark as completed
           }
         }
-  
-        setState(prev => {
+
+        setState((prev) => {
           if (prev.energy > 0) {
             const newState = {
               ...prev,
@@ -129,7 +151,6 @@ export default function GameComponent() {
               reward: prev.reward + 1,
               energy: Math.max(prev.energy - 1, 0),
             };
-            // Save updated state to IndexedDB
             savePlayerData({
               id: userData!.id,
               balance,
@@ -145,28 +166,27 @@ export default function GameComponent() {
           }
         });
       };
-  
+
       holdIntervalRef.current = setInterval(intervalHandler, 1000);
     }
   };
-  
+
   const handleHoldRelease = async () => {
     if (state.isHolding) {
       clearInterval(holdIntervalRef.current!);
       holdIntervalRef.current = null;
 
-      const updatedTasks = state.tasks.map(task => {
+      const updatedTasks = state.tasks.map((task) => {
         return task.completed ? { ...task, reward: 0 } : task;
       });
 
       const newBalance = balance + state.reward;
-
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         scorpionsCaught: prev.scorpionsCaught + prev.reward,
         reward: 0,
         isHolding: false,
-        tasks: updatedTasks
+        tasks: updatedTasks,
       }));
 
       setBalance(newBalance);
@@ -174,20 +194,40 @@ export default function GameComponent() {
       const cooldownEndTime = Date.now() + cooldownDuration * 1000;
       setCooldownTimeRemaining(cooldownDuration);
 
-      // Save player data to IndexedDB, including cooldownEndTime
       await savePlayerData({
         id: userData!.id,
         balance: newBalance,
         energy: state.energy,
-        miningLevel: 1, // Update with your current logic
+        miningLevel: 1,
         lastHarvestTime: Date.now(),
         lastExhaustedTime: Date.now(),
-        cooldownEndTime // Save cooldown end time
+        cooldownEndTime,
       });
     }
   };
 
-  // Format time to display hours, minutes, and seconds
+  // Task completion logic for social tasks
+  const handleTaskComplete = async (taskId: number) => {
+    const updatedTasks = state.tasks.map((task) => {
+      if (task.id === taskId && !task.completed) {
+        const newBalance = balance + task.reward;
+        setBalance(newBalance);
+        setState((prevState) => ({
+          ...prevState,
+          tasks: prevState.tasks.map((t) => (t.id === task.id ? { ...t, completed: true } : t)),
+        }));
+        updatePlayerBalance(userData!.id, task.reward);
+      }
+      return task;
+    });
+
+    setState((prevState) => ({
+      ...prevState,
+      tasks: updatedTasks,
+    }));
+  };
+
+  // Format time for cooldown
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);

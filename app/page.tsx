@@ -2,7 +2,6 @@
 
 import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
-import NavTop from '@/components/NavTop';
 import WebApp from '@twa-dev/sdk';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -52,6 +51,7 @@ function MainPage() {
 
   // Dynamically import the GameComponent
 const GameComponent = dynamic(() => import('../components/GameComponent'), { ssr: false });
+const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
 
   return (
     <>

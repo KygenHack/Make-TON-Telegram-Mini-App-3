@@ -34,6 +34,9 @@ interface GameState {
   isHolding: boolean;
   reward: number;
   tasks: Task[];
+  level: number;  // Add level to the game state
+  holdDuration: number; // Add hold duration tracking
+
 }
 
 export default function TaskComponent() {
@@ -43,11 +46,14 @@ export default function TaskComponent() {
     energy: 100,
     isHolding: false,
     reward: 0,
+    level: 1,  // Initial player level
+    holdDuration: 0, // Add holdDuration initialization
     tasks: [
       { id: 1, description: "Catch 50 scorpions in one hold", completed: false, reward: 50 },
       { id: 2, description: "Hold for a total of 300 seconds", completed: false, reward: 30 },
     ],
   });
+  
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -55,9 +61,10 @@ export default function TaskComponent() {
 
   // Add social tasks
   const socialTasks = [
-    { platform: 'Telegram', task: 'Join our Telegram channel', link: 'https://t.me/example_channel', reward: 10 },
+    { platform: 'Telegram', task: 'Join our TG channel', link: 'https://t.me/example_channel', reward: 10 },
+    { platform: 'Telegram', task: 'Join our TG Community', link: 'https://t.me/example_channel', reward: 10 },
     { platform: 'Twitter', task: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8 },
-    { platform: 'Facebook', task: 'Like our Facebook page', link: 'https://facebook.com/example_page', reward: 5 },
+    { platform: 'Facebook', task: 'Like us Facebook ', link: 'https://facebook.com/example_page', reward: 5 },
     { platform: 'YouTube', task: 'Subscribe to our YouTube channel', link: 'https://youtube.com/example_channel', reward: 7 },
     { platform: 'Instagram', task: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6 },
   ];
@@ -111,6 +118,8 @@ export default function TaskComponent() {
       setState((prev) => ({ ...prev, energy: 100 }));
     }
   }, [cooldownTimeRemaining, state.isHolding, state.energy]);
+
+  
 
   const handleHoldStart = () => {
     if (state.energy > 0 && !state.isHolding) {
@@ -231,6 +240,7 @@ export default function TaskComponent() {
             {balance}
           </Title>
           <p className="text-lg text-[#f48d2f]">Complete tasks to earn Scorpion rewards</p>
+          <p className="text-md text-[#f48d2f]">Player Level: {state.level}</p> {/* Display player level */}
         </div>
       </div>
 
@@ -240,7 +250,7 @@ export default function TaskComponent() {
           onClick={() => setActiveTab('in-game')}
           className={`py-2 px-6 rounded-lg ${activeTab === 'in-game' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-white'}`}
         >
-          In-Game Tasks
+          Game Tasks
         </button>
         <button
           onClick={() => setActiveTab('social')}
@@ -255,23 +265,31 @@ export default function TaskComponent() {
         {activeTab === 'in-game' ? (
           <div className="space-y-4">
             {state.tasks.map((task) => (
-              <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg">
-                <div className="flex items-center space-x-4">
-                  <FaBug className="text-2xl text-yellow-500" />
+              <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg ">
+                <div className="flex items-center space-x-6 gap-2">
+                  <FaBug className="text-4xl text-yellow-500" />
                   <div>
                     <p className="text-sm">{task.description}</p>
                     <p className="text-xs">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => handleTaskComplete(task.id)}
-                  disabled={task.completed}
-                  className={`py-2 px-4 rounded-lg shadow-md ${
-                    task.completed ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {task.completed ? 'Completed' : 'Start'}
-                </button>
+  onClick={() => handleTaskComplete(task.id)}
+  disabled={
+    task.completed || 
+    (task.id === 1 && state.scorpionsCaught < 50) || // Validate scorpions caught for Task 1
+    (task.id === 2 && !state.isHolding && state.holdDuration < 300) // Validate hold time for Task 2
+  }
+  className={`py-2 px-4 rounded-lg shadow-md ${
+    task.completed || 
+    (task.id === 1 && state.scorpionsCaught < 50) || // Disabled if scorpions caught < 50
+    (task.id === 2 && !state.isHolding && state.holdDuration < 300) // Disabled if hold time < 300
+      ? 'bg-gray-500 cursor-not-allowed' 
+      : 'bg-blue-600 hover:bg-blue-700 text-white'
+  }`}
+>
+  {task.completed ? 'Done' : 'Claim'}
+</button>
               </div>
             ))}
           </div>
