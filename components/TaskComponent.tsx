@@ -180,11 +180,11 @@ export default function TaskComponent() {
           <div className="space-y-4">
             {state.tasks.map((task) => (
               <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg ">
-                <div className="flex items-center space-x-6 gap-2">
+                <div className="flex items-center space-x-4 gap-2">
                   <FaBug className="text-4xl text-yellow-500" />
                   <div>
                     <p className="text-sm">{task.description}</p>
-                    <p className="text-xs">+{task.reward} Scorpion</p>
+                    <p className="text-xs mt-2 text-[#f48d2f]">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <button
@@ -221,7 +221,7 @@ export default function TaskComponent() {
                   {task.platform === 'Instagram' && <FaInstagram className="text-2xl text-pink-500" />}
                   <div>
                     <p className="text-sm">{task.task}</p>
-                    <p className="text-xs">+{task.reward} Scorpion</p>
+                    <p className="text-xs mt-2 text-[#f48d2f]">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <a
