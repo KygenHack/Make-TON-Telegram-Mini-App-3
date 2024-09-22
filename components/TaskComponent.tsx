@@ -119,15 +119,18 @@ export default function TaskComponent() {
     // Set the loading state for this task
     setLoadingTaskId(taskId);
 
+    // Simulate a loading delay (you can replace this with actual logic if needed)
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const taskToComplete = state.tasks.find((task) => task.id === taskId);
 
     if (taskToComplete && !taskToComplete.completed) {
-      // Simulate a loading delay (you can replace this with actual logic if needed)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updatedBalance = await getPlayerData(userData!.id).then(data => data?.balance || 0);
 
-      if (balance >= (taskToComplete.requiredBalance || 0) && state.scorpionsCaught >= 50) {
+      // Ensure we check the most recent balance from IndexedDB
+      if (updatedBalance >= (taskToComplete.requiredBalance || 0) && state.scorpionsCaught >= 50) {
         // If player meets the criteria
-        const newBalance = balance + taskToComplete.reward;
+        const newBalance = updatedBalance + taskToComplete.reward;
         setBalance(newBalance);
         setState((prevState) => ({
           ...prevState,
