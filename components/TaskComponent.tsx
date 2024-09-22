@@ -22,7 +22,7 @@ interface Task {
   description: string;
   completed: boolean;
   reward: number;
-  requiredBalance?: number; // Added balance requirement for certain tasks
+  requiredBalance?: number;
 }
 
 // Define game state interface
@@ -52,6 +52,7 @@ export default function TaskComponent() {
   });
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
+  const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null); // Track which task is loading
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
 
@@ -113,30 +114,33 @@ export default function TaskComponent() {
     }
   }, [cooldownTimeRemaining, state.isHolding, state.energy]);
 
-  // Task completion logic including balance validation
+  // Task completion logic with balance and progress validation
   const handleTaskComplete = async (taskId: number) => {
-    const updatedTasks = state.tasks.map((task) => {
-      if (task.id === taskId && !task.completed) {
-        if (balance >= (task.requiredBalance || 0)) {
-          // If player has enough balance for the task
-          const newBalance = balance + task.reward;
-          setBalance(newBalance);
-          setState((prevState) => ({
-            ...prevState,
-            tasks: prevState.tasks.map((t) => (t.id === task.id ? { ...t, completed: true } : t)),
-          }));
-          updatePlayerBalance(userData!.id, task.reward);
-        } else {
-          alert("You don't have enough balance to complete this task.");
-        }
-      }
-      return task;
-    });
+    // Set the loading state for this task
+    setLoadingTaskId(taskId);
 
-    setState((prevState) => ({
-      ...prevState,
-      tasks: updatedTasks,
-    }));
+    const taskToComplete = state.tasks.find((task) => task.id === taskId);
+
+    if (taskToComplete && !taskToComplete.completed) {
+      // Simulate a loading delay (you can replace this with actual logic if needed)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      if (balance >= (taskToComplete.requiredBalance || 0) && state.scorpionsCaught >= 50) {
+        // If player meets the criteria
+        const newBalance = balance + taskToComplete.reward;
+        setBalance(newBalance);
+        setState((prevState) => ({
+          ...prevState,
+          tasks: prevState.tasks.map((t) => (t.id === taskId ? { ...t, completed: true } : t)),
+        }));
+        await updatePlayerBalance(userData!.id, taskToComplete.reward);
+      } else {
+        alert("You don't meet the requirements to complete this task.");
+      }
+    }
+
+    // Reset the loading state after checking
+    setLoadingTaskId(null);
   };
 
   // Format time for cooldown
@@ -180,31 +184,23 @@ export default function TaskComponent() {
           <div className="space-y-4">
             {state.tasks.map((task) => (
               <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg ">
-                <div className="flex items-center space-x-4 gap-2">
+                <div className="flex items-center space-x-6 gap-2">
                   <FaBug className="text-4xl text-yellow-500" />
                   <div>
                     <p className="text-sm">{task.description}</p>
-                    <p className="text-xs mt-2 text-[#f48d2f]">+{task.reward} Scorpion</p>
+                    <p className="text-xs">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleTaskComplete(task.id)}
-                  disabled={
-                    task.completed ||
-                    (task.requiredBalance && balance < task.requiredBalance) || // Disable if player balance is too low
-                    (task.id === 1 && state.scorpionsCaught < 50) || // Validate scorpions caught for Task 1
-                    (task.id === 2 && state.holdDuration < 300) // Validate hold time for Task 2
-                  }
+                  disabled={task.completed || loadingTaskId === task.id} // Disable if the task is loading or already completed
                   className={`py-2 px-4 rounded-lg shadow-md ${
-                    task.completed ||
-                    (task.requiredBalance && balance < task.requiredBalance) ||
-                    (task.id === 1 && state.scorpionsCaught < 50) ||
-                    (task.id === 2 && state.holdDuration < 300)
+                    task.completed || loadingTaskId === task.id
                       ? 'bg-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
                 >
-                  {task.completed ? 'Done' : 'Claim'}
+                  {loadingTaskId === task.id ? 'Loading...' : task.completed ? 'Done' : 'Claim'}
                 </button>
               </div>
             ))}
@@ -221,7 +217,7 @@ export default function TaskComponent() {
                   {task.platform === 'Instagram' && <FaInstagram className="text-2xl text-pink-500" />}
                   <div>
                     <p className="text-sm">{task.task}</p>
-                    <p className="text-xs mt-2 text-[#f48d2f]">+{task.reward} Scorpion</p>
+                    <p className="text-xs">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <a
@@ -229,7 +225,6 @@ export default function TaskComponent() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md"
-                  onClick={() => handleTaskComplete(task.reward)}
                 >
                   Start
                 </a>
