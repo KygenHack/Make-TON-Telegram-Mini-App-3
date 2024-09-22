@@ -224,19 +224,24 @@ export default function TaskComponent() {
                     <p className="text-xs">+{task.reward} Scorpion</p>
                   </div>
                 </div>
-                <button
+                <a
+  href={task.status === 'not_started' ? task.link : undefined} // Only provide the link when the task is not started
+  target="_blank"
+  rel="noopener noreferrer"
   className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
     task.status === 'approved' ? 'cursor-not-allowed opacity-50' : ''
   }`}
-  onClick={() => {
-    if (task.status !== 'approved') {
-      handleSocialTaskComplete(task.id);
+  onClick={(e) => {
+    if (task.status === 'approved') {
+      e.preventDefault(); // Prevent the click if the task is approved (disabled state)
+    } else if (task.status === 'not_started') {
+      e.preventDefault(); // Prevent navigation when clicking "Start"
+      handleSocialTaskComplete(task.id); // Call the task completion handler
     }
   }}
-  disabled={task.status === 'approved'} // Disable button if task is approved
 >
   {task.status === 'pending' ? 'Pending Approval...' : task.status === 'approved' ? 'Approved' : 'Start'}
-</button>
+</a>
 
               </div>
             ))}
