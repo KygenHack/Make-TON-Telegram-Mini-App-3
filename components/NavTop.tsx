@@ -17,32 +17,17 @@ interface UserData {
   photoUrl?: string;
 }
 
-
-// Define the PlayerData type, including additional fields from Telegram and tracking harvest and energy depletion
 interface PlayerData {
-  id: number; // Telegram user ID
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-  photoUrl?: string;
-  isBot?: boolean;
-  isPremium?: boolean;
-  languageCode?: string;
-  balance: number; // Player's balance in the game
-  miningLevel: number;
-  lastHarvestTime: number; // Timestamp of the last harvest
-  lastExhaustedTime: number; // Timestamp of when the energy was exhausted
-  lastEnergyDepletionTime?: number; // Timestamp when energy was depleted
+  id: number;
+  balance: number;
 }
-
-
 
 export default function NavTop() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState('');
   const [initData, setInitData] = useState('');
   const [startParam, setStartParam] = useState('');
-  const [playerData, setPlayerData] = useState<PlayerData | null>(null);
+  const [playerData, setPlayerData] = useState<PlayerData | null>(null); // null by default
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -57,7 +42,7 @@ export default function NavTop() {
 
         // Fetch player data from IndexedDB
         const playerData = await getPlayerData(user.id);
-        setPlayerData(playerData);
+        setPlayerData(playerData ?? null); // Default to null if undefined
       }
     };
 
