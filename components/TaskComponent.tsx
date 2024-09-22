@@ -16,14 +16,17 @@ interface UserData {
   photoUrl?: string;
 }
 
-// Define task structure
 interface Task {
   id: number;
   description: string;
   completed: boolean;
   reward: number;
   requiredBalance?: number;
+  status?: 'pending' | 'approved' | 'not_started'; // Strict typing for task status
+  link?: string;  // For social tasks
+  platform?: string;  // For social tasks
 }
+
 
 // Define game state interface
 interface GameState {
@@ -43,13 +46,31 @@ const getInGameTasksBasedOnBalance = (balance: number): Task[] => {
 };
 
 // Define the social tasks
-const socialTasks = [
-  { id: 101, platform: 'Telegram', description: 'Join our Telegram Channel', link: 'https://t.me/example_channel', reward: 10 },
-  { id: 102, platform: 'Telegram', description: 'Join our Telegram Community', link: 'https://t.me/example_community', reward: 10 },
-  { id: 103, platform: 'Twitter', description: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8 },
-  { id: 104, platform: 'Facebook', description: 'Like us on Facebook', link: 'https://facebook.com/example_page', reward: 5 },
-  { id: 105, platform: 'YouTube', description: 'Subscribe to our YouTube Channel', link: 'https://youtube.com/example_channel', reward: 7 },
-  { id: 106, platform: 'Instagram', description: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6 },
+const socialTasksInitial: Task[] = [
+  {
+    id: 101, platform: 'Telegram', description: 'Join our Telegram Channel', link: 'https://t.me/example_channel', reward: 10, status: 'not_started',
+    completed: false
+  },
+  {
+    id: 102, platform: 'Telegram', description: 'Join our Telegram Community', link: 'https://t.me/example_community', reward: 10, status: 'not_started',
+    completed: false
+  },
+  {
+    id: 103, platform: 'Twitter', description: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8, status: 'not_started',
+    completed: false
+  },
+  {
+    id: 104, platform: 'Facebook', description: 'Like us on Facebook', link: 'https://facebook.com/example_page', reward: 5, status: 'not_started',
+    completed: false
+  },
+  {
+    id: 105, platform: 'YouTube', description: 'Subscribe to our YouTube Channel', link: 'https://youtube.com/example_channel', reward: 7, status: 'not_started',
+    completed: false
+  },
+  {
+    id: 106, platform: 'Instagram', description: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6, status: 'not_started',
+    completed: false
+  },
 ];
 
 export default function TaskComponent() {
@@ -57,7 +78,7 @@ export default function TaskComponent() {
   const [balance, setBalance] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null); // Track which task is loading
-  const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
+  const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game'); // To switch between tabs
 
   // Initialize player data and in-game tasks
   useEffect(() => {
@@ -70,14 +91,14 @@ export default function TaskComponent() {
       const playerData = await getPlayerData(user.id);
       if (playerData) {
         setBalance(playerData.balance);
-        setTasks(getInGameTasksBasedOnBalance(playerData.balance)); // Set tasks based on balance
+        setTasks(getInGameTasksBasedOnBalance(playerData.balance)); // Set tasks based on balance for in-game tasks
       }
     };
 
     initWebApp();
   }, []);
 
-  // Task completion logic with balance validation for in-game tasks
+  // Task completion logic for in-game tasks
   const handleTaskComplete = async (taskId: number) => {
     setLoadingTaskId(taskId);
 
@@ -101,15 +122,38 @@ export default function TaskComponent() {
     setLoadingTaskId(null);
   };
 
-  // Social task completion
-  const handleSocialTaskComplete = async (taskId: number) => {
-    const taskToComplete = socialTasks.find((task) => task.id === taskId);
-    if (taskToComplete) {
-      const newBalance = balance + taskToComplete.reward;
-      setBalance(newBalance);
-      await updatePlayerBalance(userData!.id, taskToComplete.reward);
-    }
+  const handleSocialTaskComplete = (taskId: number) => {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        return { ...task, status: 'pending' as 'pending' }; // Ensure status is typed as 'pending'
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+  
+    // After 1 minute, ask the player for confirmation
+    setTimeout(() => {
+      const confirmTaskCompletion = window.confirm('Did you complete the task?');
+      if (confirmTaskCompletion) {
+        const approvedTasks = updatedTasks.map((task) => {
+          if (task.id === taskId) {
+            return { ...task, status: 'approved' as 'approved' }; // Ensure status is typed as 'approved'
+          }
+          return task;
+        });
+        setTasks(approvedTasks);
+  
+        // Update player's balance and grant reward
+        const completedTask = approvedTasks.find((task) => task.id === taskId);
+        if (completedTask && completedTask.status === 'approved') {
+          const newBalance = balance + completedTask.reward;
+          setBalance(newBalance);
+          updatePlayerBalance(userData!.id, completedTask.reward);
+        }
+      }
+    }, 60000); // 1 minute (60,000 milliseconds)
   };
+  
 
   return (
     <div className="p-6">
@@ -118,7 +162,7 @@ export default function TaskComponent() {
           <Title caps level="1" weight="1" className="text-5xl text-white">
             {balance}
           </Title>
-          <p className="text-lg text-[#f48d2f]">Achieve balance milestones and complete social tasks to earn Scorpion rewards</p>
+          <p className="text-lg text-[#f48d2f]">Complete tasks to earn Scorpion rewards</p>
         </div>
       </div>
 
@@ -160,14 +204,14 @@ export default function TaskComponent() {
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
                 >
-                  {loadingTaskId === task.id ? 'Claiming...' : task.completed ? 'Claimed' : 'Claim'}
+                  {loadingTaskId === task.id ? 'Loading...' : task.completed ? 'Claimed' : 'Claim Reward'}
                 </button>
               </div>
             ))}
           </div>
         ) : (
           <div className="space-y-4">
-            {socialTasks.map((task) => (
+            {socialTasksInitial.map((task) => (
               <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg">
                 <div className="flex items-center space-x-4">
                   {task.platform === 'Telegram' && <FaTelegramPlane className="text-2xl text-blue-500" />}
@@ -184,10 +228,13 @@ export default function TaskComponent() {
                   href={task.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md"
+                  className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
+                    task.status === 'approved' ? 'cursor-not-allowed' : ''
+                  }`}
                   onClick={() => handleSocialTaskComplete(task.id)}
+                  disabled={task.status === 'approved'}
                 >
-                  Start
+                  {task.status === 'pending' ? 'Pending Approval...' : task.status === 'approved' ? 'Approved' : 'Start'}
                 </a>
               </div>
             ))}
