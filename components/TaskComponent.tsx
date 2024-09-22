@@ -160,7 +160,7 @@ export default function TaskComponent() {
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
                 >
-                  {loadingTaskId === task.id ? 'Loading...' : task.completed ? 'Claimed' : 'Claim Reward'}
+                  {loadingTaskId === task.id ? 'Claiming...' : task.completed ? 'Claimed' : 'Claim'}
                 </button>
               </div>
             ))}
