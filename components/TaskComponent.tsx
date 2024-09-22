@@ -23,6 +23,7 @@ interface Task {
   completed: boolean;
   reward: number;
   requiredBalance?: number;
+  holdTimeRequired?: number; // For in-game tasks with holding time
 }
 
 // Define game state interface
@@ -36,8 +37,43 @@ interface GameState {
   holdDuration: number;
 }
 
+// Function to return in-game tasks based on balance (mining status)
+const getInGameTasksBasedOnBalance = (balance: number): Task[] => {
+  if (balance >= 5000) {
+    return [
+      { id: 1, description: 'Hold for 600 seconds and catch 100 scorpions', completed: false, reward: 500, holdTimeRequired: 600 },
+      { id: 2, description: 'Catch 100 scorpions in one hold', completed: false, reward: 500 },
+    ];
+  } else if (balance >= 4000) {
+    return [
+      { id: 1, description: 'Hold for 500 seconds and catch 80 scorpions', completed: false, reward: 400, holdTimeRequired: 500 },
+      { id: 2, description: 'Catch 80 scorpions in one hold', completed: false, reward: 400 },
+    ];
+  } else if (balance >= 3000) {
+    return [
+      { id: 1, description: 'Hold for 400 seconds and catch 60 scorpions', completed: false, reward: 300, holdTimeRequired: 400 },
+      { id: 2, description: 'Catch 60 scorpions in one hold', completed: false, reward: 300 },
+    ];
+  } else if (balance >= 2000) {
+    return [
+      { id: 1, description: 'Hold for 300 seconds and catch 50 scorpions', completed: false, reward: 200, holdTimeRequired: 300 },
+      { id: 2, description: 'Catch 50 scorpions in one hold', completed: false, reward: 200 },
+    ];
+  } else if (balance >= 1000) {
+    return [
+      { id: 1, description: 'Hold for 200 seconds and catch 30 scorpions', completed: false, reward: 100, holdTimeRequired: 200 },
+      { id: 2, description: 'Catch 30 scorpions in one hold', completed: false, reward: 100 },
+    ];
+  }
+  return [
+    { id: 1, description: 'Hold for 100 seconds and catch 10 scorpions', completed: false, reward: 50, holdTimeRequired: 100 },
+    { id: 2, description: 'Catch 10 scorpions in one hold', completed: false, reward: 50 },
+  ];
+};
+
 export default function TaskComponent() {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [balance, setBalance] = useState(0);
   const [state, setState] = useState<GameState>({
     scorpionsCaught: 0,
     energy: 100,
@@ -45,15 +81,10 @@ export default function TaskComponent() {
     reward: 0,
     level: 1,
     holdDuration: 0,
-    tasks: [
-      { id: 1, description: 'Catch 50 scorpions in one hold', completed: false, reward: 50, requiredBalance: 500 },
-      { id: 2, description: 'Hold for a total of 300 seconds', completed: false, reward: 30, requiredBalance: 300 },
-    ],
+    tasks: [],
   });
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
-  const [balance, setBalance] = useState(0);
   const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null); // Track which task is loading
-  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
 
   // Add social tasks
@@ -66,7 +97,7 @@ export default function TaskComponent() {
     { platform: 'Instagram', task: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6 },
   ];
 
-  // Initialize player data
+  // Initialize player data and in-game tasks
   useEffect(() => {
     const initWebApp = async () => {
       const WebApp = (await import('@twa-dev/sdk')).default;
@@ -91,7 +122,11 @@ export default function TaskComponent() {
         });
       } else {
         setBalance(playerData.balance);
-        setState((s) => ({ ...s, energy: playerData.energy }));
+        setState((s) => ({
+          ...s,
+          energy: playerData.energy,
+          tasks: getInGameTasksBasedOnBalance(playerData.balance),
+        }));
         const now = Date.now();
         if (playerData.cooldownEndTime && playerData.cooldownEndTime > now) {
           setCooldownTimeRemaining(Math.floor((playerData.cooldownEndTime - now) / 1000));
@@ -119,16 +154,14 @@ export default function TaskComponent() {
     // Set the loading state for this task
     setLoadingTaskId(taskId);
 
-    // Simulate a loading delay (you can replace this with actual logic if needed)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     const taskToComplete = state.tasks.find((task) => task.id === taskId);
 
     if (taskToComplete && !taskToComplete.completed) {
-      const updatedBalance = await getPlayerData(userData!.id).then(data => data?.balance || 0);
+      const playerData = await getPlayerData(userData?.id || 0);
+      const updatedBalance = playerData?.balance || 0;
 
       // Ensure we check the most recent balance from IndexedDB
-      if (updatedBalance >= (taskToComplete.requiredBalance || 0) && state.scorpionsCaught >= 50) {
+      if (updatedBalance >= (taskToComplete.requiredBalance || 0) && state.scorpionsCaught >= (taskToComplete.holdTimeRequired || 0)) {
         // If player meets the criteria
         const newBalance = updatedBalance + taskToComplete.reward;
         setBalance(newBalance);
