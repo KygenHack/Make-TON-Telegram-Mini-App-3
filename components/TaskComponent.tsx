@@ -192,7 +192,7 @@ export default function TaskComponent() {
                   <FaBug className="text-4xl text-yellow-500" />
                   <div>
                     <p className="text-sm">{task.description}</p>
-                    <p className="text-xs">+{task.reward} Scorpion</p>
+                    <p className="text-xs text-[#f48d2f]">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <button
