@@ -54,8 +54,7 @@ export default function TaskComponent() {
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
   const [isLinkClicked, setIsLinkClicked] = useState(false);
-  const [modalContent, setModalContent] = useState<JSX.Element | null>(null); // For modal content
-  const [showModal, setShowModal] = useState(false); // For modal visibility
+  const [showCompleteMessage, setShowCompleteMessage] = useState(false);
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -92,12 +91,7 @@ export default function TaskComponent() {
             prevTasks.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
           );
           await updatePlayerBalance(userData!.id, taskToComplete.reward);
-          setModalContent(
-            <Placeholder description="You have completed the task! You can move on to the next one." header="Task Completed">
-              <Button size="m" onClick={() => setShowModal(false)}>OK</Button>
-            </Placeholder>
-          );
-          setShowModal(true);
+          setShowCompleteMessage(true);
         } else {
           alert("You don't meet the required balance to complete this task.");
         }
@@ -117,21 +111,7 @@ export default function TaskComponent() {
     );
     setCurrentTaskId(taskId);
     setIsLinkClicked(false);
-    setModalContent(
-      <Placeholder description="Follow the link to complete the task." header="Task Instructions">
-        <p>Follow the link to complete the task:</p>
-        <a href={socialTasksInitial.find((task) => task.id === taskId)?.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline" onClick={handleLinkClick}>
-          {socialTasksInitial.find((task) => task.id === taskId)?.platform} Link
-        </a>
-        <div className="mt-4">
-          <Button size="m" onClick={confirmTaskCompletion} disabled={!isLinkClicked}>
-            Complete Task
-          </Button>
-        </div>
-      </Placeholder>
-    );
-    setShowModal(true);
-  }, [socialTasksInitial]);
+  }, []);
 
   const confirmTaskCompletion = useCallback(() => {
     if (currentTaskId !== null) {
@@ -139,18 +119,23 @@ export default function TaskComponent() {
       if (completedTask && completedTask.status === 'pending') {
         const newBalance = balance + completedTask.reward;
         setBalance(newBalance);
-        updatePlayerBalance(userData!.id, completedTask.reward);
-        setModalContent(
-          <Placeholder description="You have completed the task! You can move on to the next one." header="Task Completed">
-            <Button size="m" onClick={() => setShowModal(false)}>OK</Button>
-          </Placeholder>
-        );
+  
+        // Mark task as completed
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
             task.id === currentTaskId ? { ...task, status: 'approved', completed: true } : task
           )
         );
+  
+        // Update balance in IndexedDB
+        updatePlayerBalance(userData!.id, completedTask.reward);
+  
+        // Show completion message if needed
+        setShowCompleteMessage(true);
       }
+  
+      // Reset modal states
+      setIsLinkClicked(false);
       setCurrentTaskId(null);
     }
   }, [currentTaskId, tasks, balance, userData]);
@@ -229,26 +214,42 @@ export default function TaskComponent() {
                     <p className="text-xs text-[#f48d2f]">+{task.reward} Scorpion</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleSocialTaskComplete(task.id)}
-                  className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md`}
+                <Modal
+                  header={<ModalHeader after={<ModalClose>Close</ModalClose>}>Task Instructions</ModalHeader>}
+                  trigger={(
+                    <button
+                      onClick={() => handleSocialTaskComplete(task.id)}
+                      className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md`}
+                    >
+                      {task.completed ? 'Done' : 'Start'}
+                    </button>
+                  )}
                 >
-                  {task.completed ? 'Done' : 'Start'}
-                </button>
+                  <Placeholder description={task.description} header="Task Instructions">
+                    <p>Follow the link to complete the task:</p>
+                    <a
+                      href={task.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                      onClick={handleLinkClick}
+                    >
+                      {task.platform} Link
+                    </a>
+                    <div className="mt-4">
+                      <Button size="m" onClick={confirmTaskCompletion} disabled={!isLinkClicked}>
+                        Complete Task
+                      </Button>
+                    </div>
+                  </Placeholder>
+                </Modal>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {showModal && (
-        <Modal
-          header={<ModalHeader after={<ModalClose>Close</ModalClose>}>{modalContent && modalContent.props.header}</ModalHeader>}
-          trigger={<span />} // Hidden trigger to open the modal
-        >
-          {modalContent}
-        </Modal>
-      )}
+     
     </div>
   );
 }
