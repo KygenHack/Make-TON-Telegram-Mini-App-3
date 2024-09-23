@@ -56,19 +56,19 @@ const socialTasksInitial: Task[] = [
     completed: false
   },
   {
-    id: 103, platform: 'Twitter', description: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8, status: 'not_started',
+    id: 103, platform: 'Twitter', description: 'Follow on X', link: 'https://twitter.com/example_account', reward: 8, status: 'not_started',
     completed: false
   },
   {
-    id: 104, platform: 'Facebook', description: 'Like us on Facebook', link: 'https://facebook.com/example_page', reward: 5, status: 'not_started',
+    id: 104, platform: 'Facebook', description: 'Like on Facebook', link: 'https://facebook.com/example_page', reward: 5, status: 'not_started',
     completed: false
   },
   {
-    id: 105, platform: 'YouTube', description: 'Subscribe to our YouTube Channel', link: 'https://youtube.com/example_channel', reward: 7, status: 'not_started',
+    id: 105, platform: 'YouTube', description: 'Subscribe to YouTube', link: 'https://youtube.com/example_channel', reward: 7, status: 'not_started',
     completed: false
   },
   {
-    id: 106, platform: 'Instagram', description: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6, status: 'not_started',
+    id: 106, platform: 'Instagram', description: 'Followon Instagram', link: 'https://instagram.com/example_profile', reward: 6, status: 'not_started',
     completed: false
   },
 ];
