@@ -29,6 +29,7 @@ interface Task {
   platform?: string;
 }
 
+// Helper function to get in-game tasks based on balance
 const getInGameTasksBasedOnBalance = (balance: number): Task[] => [
   { id: 1, description: 'Reach a balance of 500 Scorpions', completed: balance >= 500, reward: 50, requiredBalance: 500 },
   { id: 2, description: 'Reach a balance of 1000 Scorpions', completed: balance >= 1000, reward: 100, requiredBalance: 1000 },
@@ -37,6 +38,7 @@ const getInGameTasksBasedOnBalance = (balance: number): Task[] => [
   { id: 5, description: 'Reach a balance of 5000 Scorpions', completed: balance >= 5000, reward: 500, requiredBalance: 5000 },
 ];
 
+// Define the initial social tasks
 const socialTasksInitial: Task[] = [
   { id: 101, platform: 'Telegram', description: 'Join Telegram Channel', link: 'https://t.me/scorpioncommunity_channel', reward: 10, status: 'not_started', completed: false },
   { id: 102, platform: 'Telegram', description: 'Join Telegram Community', link: 'https://t.me/scorpion_community', reward: 10, status: 'not_started', completed: false },
@@ -76,6 +78,7 @@ export default function TaskComponent() {
     initWebApp();
   }, []);
 
+  // Handle in-game task completion
   const handleTaskComplete = useCallback(async (taskId: number) => {
     setLoadingTaskId(taskId);
 
@@ -84,7 +87,7 @@ export default function TaskComponent() {
       if (taskToComplete && !taskToComplete.completed) {
         const updatedBalance = await getPlayerData(userData!.id).then((data) => data?.balance || 0);
 
-        if (updatedBalance >= taskToComplete.requiredBalance!) {
+        if (updatedBalance >= (taskToComplete.requiredBalance ?? 0)) {
           const newBalance = updatedBalance + taskToComplete.reward;
           setBalance(newBalance);
           setTasks((prevTasks) =>
@@ -103,6 +106,7 @@ export default function TaskComponent() {
     }
   }, [tasks, userData]);
 
+  // Handle social task initiation and modal interaction
   const handleSocialTaskComplete = useCallback((taskId: number) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -113,6 +117,7 @@ export default function TaskComponent() {
     setIsLinkClicked(false);
   }, []);
 
+  // Confirm social task completion and update state
   const confirmTaskCompletion = useCallback(() => {
     if (currentTaskId !== null) {
       const completedTask = tasks.find((task) => task.id === currentTaskId);
@@ -228,8 +233,12 @@ export default function TaskComponent() {
                       {task.platform} Link
                     </a>
                     <div className="mt-4">
-                      <Button size="m" onClick={confirmTaskCompletion} disabled={!isLinkClicked}>
-                        Complete Task
+                      <Button
+                        size="m"
+                        onClick={confirmTaskCompletion}
+                        disabled={!isLinkClicked || task.completed}
+                      >
+                        {task.completed ? 'Done' : 'Complete Task'}
                       </Button>
                     </div>
                   </Placeholder>
