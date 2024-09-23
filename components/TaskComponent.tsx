@@ -52,6 +52,7 @@ export default function TaskComponent() {
   const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null); // Track the current task in modal
+  const [isLinkClicked, setIsLinkClicked] = useState(false); // Track whether the task link was clicked
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -106,6 +107,7 @@ export default function TaskComponent() {
       )
     );
     setCurrentTaskId(taskId); // Track the task being confirmed
+    setIsLinkClicked(false); // Reset link click status
   }, []);
 
   const confirmTaskCompletion = useCallback(() => {
@@ -126,6 +128,10 @@ export default function TaskComponent() {
       setCurrentTaskId(null); // Reset task tracking
     }
   }, [currentTaskId, tasks, balance, userData]);
+
+  const handleLinkClick = () => {
+    setIsLinkClicked(true); // Mark the link as clicked
+  };
 
   const inGameTasks = useMemo(() => tasks.filter((task) => task.requiredBalance), [tasks]);
   const socialTasks = useMemo(() => socialTasksInitial, []);
@@ -198,7 +204,7 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <Modal
-                  header={<ModalHeader>Task Instructions</ModalHeader>} // Changed to Task Instructions
+                  header={<ModalHeader>Task Instructions</ModalHeader>} // Task Instructions
                   trigger={(
                     <button
                       onClick={() => handleSocialTaskComplete(task.id)} // This triggers the modal directly
@@ -210,12 +216,20 @@ export default function TaskComponent() {
                 >
                   <Placeholder description={task.description} header="Task Instructions">
                     <p>Follow the link to complete the task:</p>
-                    <a href={task.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                    <a
+                      href={task.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                      onClick={handleLinkClick} // Track link click
+                    >
                       {task.platform} Link
                     </a>
                     <div className="mt-4">
-                      <Button size="m" onClick={confirmTaskCompletion}>Complete Task</Button>
-                      <Button size="m" onClick={() => setCurrentTaskId(null)}>Cancel</Button>
+                      {/* Disable the Complete button until the link is clicked */}
+                      <Button size="m" onClick={confirmTaskCompletion} disabled={!isLinkClicked}>
+                        Complete Task
+                      </Button>
                     </div>
                   </Placeholder>
                 </Modal>
