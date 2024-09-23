@@ -29,7 +29,6 @@ interface Task {
   platform?: string;
 }
 
-// Helper function to get in-game tasks based on balance
 const getInGameTasksBasedOnBalance = (balance: number): Task[] => [
   { id: 1, description: 'Reach a balance of 500 Scorpions', completed: balance >= 500, reward: 50, requiredBalance: 500 },
   { id: 2, description: 'Reach a balance of 1000 Scorpions', completed: balance >= 1000, reward: 100, requiredBalance: 1000 },
@@ -38,7 +37,6 @@ const getInGameTasksBasedOnBalance = (balance: number): Task[] => [
   { id: 5, description: 'Reach a balance of 5000 Scorpions', completed: balance >= 5000, reward: 500, requiredBalance: 5000 },
 ];
 
-// Define the initial social tasks
 const socialTasksInitial: Task[] = [
   { id: 101, platform: 'Telegram', description: 'Join Telegram Channel', link: 'https://t.me/scorpioncommunity_channel', reward: 10, status: 'not_started', completed: false },
   { id: 102, platform: 'Telegram', description: 'Join Telegram Community', link: 'https://t.me/scorpion_community', reward: 10, status: 'not_started', completed: false },
@@ -51,7 +49,7 @@ const socialTasksInitial: Task[] = [
 export default function TaskComponent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balance, setBalance] = useState(0);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(socialTasksInitial);
   const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
@@ -78,10 +76,8 @@ export default function TaskComponent() {
     initWebApp();
   }, []);
 
-  // Handle in-game task completion
   const handleTaskComplete = useCallback(async (taskId: number) => {
     setLoadingTaskId(taskId);
-
     try {
       const taskToComplete = tasks.find((task) => task.id === taskId);
       if (taskToComplete && !taskToComplete.completed) {
@@ -106,7 +102,6 @@ export default function TaskComponent() {
     }
   }, [tasks, userData]);
 
-  // Handle social task initiation and modal interaction
   const handleSocialTaskComplete = useCallback((taskId: number) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -117,12 +112,15 @@ export default function TaskComponent() {
     setIsLinkClicked(false);
   }, []);
 
-  // Confirm social task completion and update state
   const confirmTaskCompletion = useCallback(() => {
     if (currentTaskId !== null) {
+      console.log("Task ID to be completed:", currentTaskId);
       const completedTask = tasks.find((task) => task.id === currentTaskId);
       if (completedTask && completedTask.status === 'pending') {
         const newBalance = balance + completedTask.reward;
+        console.log("Updated balance:", newBalance);
+
+        // Updating balance and task state
         setBalance(newBalance);
         updatePlayerBalance(userData!.id, completedTask.reward);
         setShowCompleteMessage(true);
@@ -131,6 +129,9 @@ export default function TaskComponent() {
             task.id === currentTaskId ? { ...task, status: 'approved', completed: true } : task
           )
         );
+        console.log("Task completed:", completedTask);
+      } else {
+        console.log("Task not found or not pending:", completedTask);
       }
       setCurrentTaskId(null);
     }
@@ -138,6 +139,7 @@ export default function TaskComponent() {
 
   const handleLinkClick = () => {
     setIsLinkClicked(true);
+    console.log("Link clicked, button should be enabled");
   };
 
   const inGameTasks = useMemo(() => tasks.filter((task) => task.requiredBalance), [tasks]);
