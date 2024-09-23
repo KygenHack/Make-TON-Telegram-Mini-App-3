@@ -68,21 +68,34 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
   };
 
   return (
-    <div className="bg-white text-primaryLight p-6 rounded-lg shadow-custom max-w-md mx-auto">
+    <div className="text-primaryLight p-6 rounded-lg shadow-custom max-w-md mx-auto">
       {referrer && (
         <p className="text-green-400 mb-4">You were referred by user {referrer}</p>
       )}
 
       <div className="text-center">
-      <h2 className="text-2xl text-black font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
-      <p className="text-gray-400 mb-6">
-          Invite your friends and both of you will receive bonuses.{' '}
-          <a href="#" className="text-blue-400 underline">
-            How it works?
-          </a>
+      <h2 className="text-3xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
+      <p className="text-[#f48d2f] mb-6">
+          Invite your friends and both of you will receive bonuses. Score 10% from buddies + 2.5% from their referrals
         </p>
-              <p className="text-sm text-black mb-4">Score 10% from buddies + 2.5% from their referrals</p>
-        <div className="space-y-4">
+        <p className="text-sm text-[#f48d2f] mb-4"></p>
+      </div>
+
+      <div className="flex item-center justify-between mt-6">
+          <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Frens</h2>
+          <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
+        </div>
+      {referrals.length > 0 && (
+          <ul>
+            {referrals.map((referral, index) => (
+              <li key={index} className="bg-gray-800 p-2 mb-2 rounded">
+                {referral}
+              </li>
+            ))}
+          </ul>
+      )}
+
+<div className="space-y-4">
           <button
             onClick={handleInviteFriend}
             className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded transition duration-300"
@@ -96,22 +109,8 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
             Copy Invite Link
           </button>
         </div>
-      </div>
-
-      <div className="flex item-center justify-between mt-6">
-          <h2 className="text-lg text-black font-bold mb-4">Your Frens</h2>
-          <p className="text-lg text-black font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
-        </div>
-      {referrals.length > 0 && (
-          <ul>
-            {referrals.map((referral, index) => (
-              <li key={index} className="bg-gray-800 p-2 mb-2 rounded">
-                {referral}
-              </li>
-            ))}
-          </ul>
-      )}
     </div>
+    
   );
 };
 

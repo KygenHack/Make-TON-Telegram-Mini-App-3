@@ -156,7 +156,7 @@ export default function TaskComponent() {
   
 
   return (
-    <div className="p-6">
+    <div className="p-2">
       <div className="flex justify-center">
         <div className="text-center">
           <Title caps level="1" weight="1" className="text-5xl text-white">
