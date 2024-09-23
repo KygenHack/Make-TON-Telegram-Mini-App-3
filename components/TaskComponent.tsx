@@ -51,7 +51,6 @@ export default function TaskComponent() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
-  const [showModal, setShowModal] = useState(false); // Modal state
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null); // Track the current task in modal
 
   useEffect(() => {
@@ -101,18 +100,12 @@ export default function TaskComponent() {
   }, [tasks, userData]);
 
   const handleSocialTaskComplete = useCallback((taskId: number) => {
-    // Update task to pending
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? { ...task, status: 'pending' } : task
       )
     );
-    setShowModal(true); // Show modal
     setCurrentTaskId(taskId); // Track the task being confirmed
-
-    setTimeout(() => {
-      setShowModal(true); // Open the modal after 20 seconds
-    }, 20000); // 20 seconds timeout
   }, []);
 
   const confirmTaskCompletion = useCallback(() => {
@@ -130,7 +123,6 @@ export default function TaskComponent() {
         updatePlayerBalance(userData!.id, completedTask.reward);
       }
 
-      setShowModal(false); // Hide modal after confirmation
       setCurrentTaskId(null); // Reset task tracking
     }
   }, [currentTaskId, tasks, balance, userData]);
@@ -205,52 +197,36 @@ export default function TaskComponent() {
                     <p className="text-xs text-[#f48d2f]">+{task.reward} Scorpion</p>
                   </div>
                 </div>
-                <a
-                  href={task.status === 'not_started' ? task.link : undefined}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
-                    task.status === 'approved' ? 'cursor-not-allowed opacity-50' : ''
-                  }`}
-                  onClick={(e) => {
-                    if (task.status === 'approved') {
-                      e.preventDefault();
-                    } else if (task.status === 'not_started') {
-                      e.preventDefault();
-                      handleSocialTaskComplete(task.id);
-                    }
-                  }}
+                <Modal
+                  header={<ModalHeader>Task Confirmation</ModalHeader>}
+                  trigger={(
+                    <button
+                      onClick={() => handleSocialTaskComplete(task.id)} // This triggers the modal directly
+                      className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md`}
+                    >
+                      Start
+                    </button>
+                  )}
                 >
-                  {task.status === 'pending' ? 'Pending Approval...' : task.status === 'approved' ? 'Approved' : 'Start'}
-                </a>
+                  <Placeholder description="Did you complete the task?" header="Task Confirmation">
+                    <img
+                      alt="Telegram sticker"
+                      src="https://xelene.me/telegram.gif"
+                      style={{
+                        display: 'block',
+                        height: '144px',
+                        width: '144px',
+                      }}
+                    />
+                    <Button size="m" onClick={confirmTaskCompletion}>Yes</Button>
+                    <Button size="m" onClick={() => setCurrentTaskId(null)}>No</Button>
+                  </Placeholder>
+                </Modal>
               </div>
             ))}
           </div>
         )}
       </div>
-
-     {/* Modal for task completion confirmation */}
-{showModal && (
-  <Modal
-    header={<ModalHeader>Task Confirmation</ModalHeader>}
-    trigger={<Button size="m">Open Modal</Button>}
-  >
-    <Placeholder description="Did you complete the task?" header="Task Confirmation">
-      <img
-        alt="Telegram sticker"
-        src="https://xelene.me/telegram.gif"
-        style={{
-          display: 'block',
-          height: '144px',
-          width: '144px',
-        }}
-      />
-      <Button size="m" onClick={confirmTaskCompletion}>Yes</Button>
-      <Button size="m" onClick={() => setShowModal(false)}>No</Button>
-    </Placeholder>
-  </Modal>
-)}
-
     </div>
   );
 }
