@@ -229,27 +229,28 @@ export default function TaskComponent() {
         )}
       </div>
 
-      {/* Modal for task completion confirmation */}
-      {showModal && (
-        <Modal
-          header={<ModalHeader>Task Confirmation</ModalHeader>}
-          onClose={() => setShowModal(false)}
-        >
-          <Placeholder description="Did you complete the task?" header="Task Confirmation">
-            <img
-              alt="Telegram sticker"
-              src="https://xelene.me/telegram.gif"
-              style={{
-                display: 'block',
-                height: '144px',
-                width: '144px',
-              }}
-            />
-            <Button size="m" onClick={confirmTaskCompletion}>Yes</Button>
-            <Button size="m" onClick={() => setShowModal(false)}>No</Button>
-          </Placeholder>
-        </Modal>
-      )}
+     {/* Modal for task completion confirmation */}
+{showModal && (
+  <Modal
+    header={<ModalHeader>Task Confirmation</ModalHeader>}
+    trigger={<Button size="m">Open Modal</Button>}
+  >
+    <Placeholder description="Did you complete the task?" header="Task Confirmation">
+      <img
+        alt="Telegram sticker"
+        src="https://xelene.me/telegram.gif"
+        style={{
+          display: 'block',
+          height: '144px',
+          width: '144px',
+        }}
+      />
+      <Button size="m" onClick={confirmTaskCompletion}>Yes</Button>
+      <Button size="m" onClick={() => setShowModal(false)}>No</Button>
+    </Placeholder>
+  </Modal>
+)}
+
     </div>
   );
 }
