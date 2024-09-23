@@ -48,19 +48,19 @@ const getInGameTasksBasedOnBalance = (balance: number): Task[] => {
 // Define the social tasks
 const socialTasksInitial: Task[] = [
   {
-    id: 101, platform: 'Telegram', description: 'Join Telegram Channel', link: 'https://t.me/example_channel', reward: 10, status: 'not_started',
+    id: 101, platform: 'Telegram', description: 'Join Telegram Channel', link: 'https://t.me/scorpioncommunity_channel', reward: 10, status: 'not_started',
     completed: false
   },
   {
-    id: 102, platform: 'Telegram', description: 'Join Telegram Community', link: 'https://t.me/example_community', reward: 10, status: 'not_started',
+    id: 102, platform: 'Telegram', description: 'Join Telegram Community', link: 'https://t.me/scorpion_community', reward: 10, status: 'not_started',
     completed: false
   },
   {
-    id: 103, platform: 'Twitter', description: 'Follow on X', link: 'https://twitter.com/example_account', reward: 8, status: 'not_started',
+    id: 103, platform: 'Twitter', description: 'Follow on X', link: 'https://x.com/scorpionworld3', reward: 8, status: 'not_started',
     completed: false
   },
   {
-    id: 104, platform: 'Facebook', description: 'Like on Facebook', link: 'https://facebook.com/example_page', reward: 5, status: 'not_started',
+    id: 104, platform: 'Facebook', description: 'Like on Facebook', link: 'https://web.facebook.com/people/Scorpionworld', reward: 5, status: 'not_started',
     completed: false
   },
   {
@@ -68,7 +68,7 @@ const socialTasksInitial: Task[] = [
     completed: false
   },
   {
-    id: 106, platform: 'Instagram', description: 'Followon Instagram', link: 'https://instagram.com/example_profile', reward: 6, status: 'not_started',
+    id: 106, platform: 'Instagram', description: 'Follow Instagram', link: 'https://www.instagram.com/scorpionworld3', reward: 6, status: 'not_started',
     completed: false
   },
 ];
@@ -79,6 +79,8 @@ export default function TaskComponent() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null); // Track which task is loading
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game'); // To switch between tabs
+  const [countdowns, setCountdowns] = useState<{ [key: number]: number }>({}); // Track countdown for each task
+
 
   // Initialize player data and in-game tasks
   useEffect(() => {
@@ -98,62 +100,54 @@ export default function TaskComponent() {
     initWebApp();
   }, []);
 
-  // Task completion logic for in-game tasks
-  const handleTaskComplete = async (taskId: number) => {
-    setLoadingTaskId(taskId);
-
-    const taskToComplete = tasks.find((task) => task.id === taskId);
-
-    if (taskToComplete && !taskToComplete.completed) {
-      const updatedBalance = await getPlayerData(userData!.id).then((data) => data?.balance || 0);
-
-      if (updatedBalance >= taskToComplete.requiredBalance!) {
-        const newBalance = updatedBalance + taskToComplete.reward;
-        setBalance(newBalance);
-        setTasks((prevTasks) =>
-          prevTasks.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
-        );
-        await updatePlayerBalance(userData!.id, taskToComplete.reward);
-      } else {
-        alert("You don't meet the required balance to complete this task.");
-      }
+ // Start the countdown when a task is clicked
+ const handleSocialTaskComplete = (taskId: number) => {
+  const updatedTasks = tasks.map((task) => {
+    if (task.id === taskId) {
+      return { ...task, status: 'pending' as 'pending' }; // Set task to 'pending'
     }
+    return task;
+  });
+  setTasks(updatedTasks);
 
-    setLoadingTaskId(null);
-  };
+  // Set the countdown for the task
+  setCountdowns((prev) => ({ ...prev, [taskId]: 60 })); // Set 60 seconds countdown for the task
 
-  const handleSocialTaskComplete = (taskId: number) => {
-    const updatedTasks = tasks.map((task) => {
-      if (task.id === taskId) {
-        return { ...task, status: 'pending' as 'pending' }; // Ensure status is typed as 'pending'
-      }
-      return task;
-    });
-    setTasks(updatedTasks);
-  
-    // After 1 minute, ask the player for confirmation
-    setTimeout(() => {
-      const confirmTaskCompletion = window.confirm('Did you complete the task?');
-      if (confirmTaskCompletion) {
-        const approvedTasks = updatedTasks.map((task) => {
-          if (task.id === taskId) {
-            return { ...task, status: 'approved' as 'approved' }; // Ensure status is typed as 'approved'
+  // Start the countdown interval
+  const countdownInterval = setInterval(() => {
+    setCountdowns((prev) => {
+      if (prev[taskId] > 1) {
+        return { ...prev, [taskId]: prev[taskId] - 1 };
+      } else {
+        clearInterval(countdownInterval); // Stop the countdown when it reaches 0
+
+        // Ask for confirmation after 60 seconds
+        const confirmTaskCompletion = window.confirm('Did you complete the task?');
+        if (confirmTaskCompletion) {
+          const approvedTasks = updatedTasks.map((task) => {
+            if (task.id === taskId) {
+              return { ...task, status: 'approved' as 'approved' }; // Mark as 'approved'
+            }
+            return task;
+          });
+          setTasks(approvedTasks);
+
+          // Update player's balance and grant reward
+          const completedTask = approvedTasks.find((task) => task.id === taskId);
+          if (completedTask && completedTask.status === 'approved') {
+            const newBalance = balance + completedTask.reward;
+            setBalance(newBalance);
+            updatePlayerBalance(userData!.id, completedTask.reward);
           }
-          return task;
-        });
-        setTasks(approvedTasks);
-  
-        // Update player's balance and grant reward
-        const completedTask = approvedTasks.find((task) => task.id === taskId);
-        if (completedTask && completedTask.status === 'approved') {
-          const newBalance = balance + completedTask.reward;
-          setBalance(newBalance);
-          updatePlayerBalance(userData!.id, completedTask.reward);
         }
+
+        // Remove the countdown for this task
+        const { [taskId]: _, ...rest } = prev;
+        return rest;
       }
-    }, 60000); // 1 minute (60,000 milliseconds)
-  };
-  
+    });
+  }, 1000); // Run every second
+};
 
   return (
     <div className="p-2">
@@ -196,7 +190,7 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleTaskComplete(task.id)}
+                  onClick={() => handleSocialTaskComplete(task.id)}
                   disabled={task.completed || loadingTaskId === task.id} // Disable if the task is loading or already completed
                   className={`py-2 px-4 rounded-lg shadow-md ${
                     task.completed || loadingTaskId === task.id
@@ -225,23 +219,27 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <a
-  href={task.status === 'not_started' ? task.link : undefined} // Only provide the link when the task is not started
-  target="_blank"
-  rel="noopener noreferrer"
-  className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
-    task.status === 'approved' ? 'cursor-not-allowed opacity-50' : ''
-  }`}
-  onClick={(e) => {
-    if (task.status === 'approved') {
-      e.preventDefault(); // Prevent the click if the task is approved (disabled state)
-    } else if (task.status === 'not_started') {
-      e.preventDefault(); // Prevent navigation when clicking "Start"
-      handleSocialTaskComplete(task.id); // Call the task completion handler
-    }
-  }}
->
-  {task.status === 'pending' ? 'Pending Approval...' : task.status === 'approved' ? 'Approved' : 'Start'}
-</a>
+                href={task.status === 'not_started' ? task.link : undefined} // Only allow navigation if task is not started
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
+                  task.status === 'approved' ? 'cursor-not-allowed opacity-50' : ''
+                }`}
+                onClick={(e) => {
+                  if (task.status === 'approved') {
+                    e.preventDefault(); // Prevent clicking if already approved
+                  } else if (task.status === 'not_started') {
+                    e.preventDefault(); // Prevent navigation and start the task process
+                    handleSocialTaskComplete(task.id); // Trigger task completion
+                  }
+                }}
+              >
+                {task.status === 'pending'
+                  ? `Approving in ${countdowns[task.id]} seconds...` // Show countdown if task is pending
+                  : task.status === 'approved'
+                  ? 'Approved' // Show approved state
+                  : 'Start'} // Show start state
+              </a>
 
               </div>
             ))}
@@ -251,3 +249,7 @@ export default function TaskComponent() {
     </div>
   );
 }
+function setCountdowns(arg0: (prev: any) => any) {
+  throw new Error('Function not implemented.');
+}
+
