@@ -121,8 +121,8 @@ export default function TaskComponent() {
       const completedTask = tasks.find((task) => task.id === currentTaskId);
       if (completedTask && completedTask.status === 'approved') {
         const newBalance = balance + completedTask.reward;
-        setBalance(newBalance);
-        updatePlayerBalance(userData!.id, completedTask.reward);
+        setBalance(newBalance); // Update the player's balance with the reward
+        updatePlayerBalance(userData!.id, completedTask.reward); // Save balance to the database
       }
 
       setCurrentTaskId(null); // Reset task tracking
