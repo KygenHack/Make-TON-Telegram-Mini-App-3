@@ -119,23 +119,14 @@ export default function TaskComponent() {
       if (completedTask && completedTask.status === 'pending') {
         const newBalance = balance + completedTask.reward;
         setBalance(newBalance);
-  
-        // Mark task as completed
+        updatePlayerBalance(userData!.id, completedTask.reward);
+        setShowCompleteMessage(true);
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
             task.id === currentTaskId ? { ...task, status: 'approved', completed: true } : task
           )
         );
-  
-        // Update balance in IndexedDB
-        updatePlayerBalance(userData!.id, completedTask.reward);
-  
-        // Show completion message if needed
-        setShowCompleteMessage(true);
       }
-  
-      // Reset modal states
-      setIsLinkClicked(false);
       setCurrentTaskId(null);
     }
   }, [currentTaskId, tasks, balance, userData]);
@@ -248,8 +239,6 @@ export default function TaskComponent() {
           </div>
         )}
       </div>
-
-     
     </div>
   );
 }
