@@ -77,10 +77,7 @@ export default function TaskComponent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balance, setBalance] = useState(0);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loadingTaskId, setLoadingTaskId] = useState<number | null>(null); // Track which task is loading
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game'); // To switch between tabs
-  const [countdowns, setCountdowns] = useState<{ [key: number]: number }>({}); // Track countdown for each task
-
 
   // Initialize player data and in-game tasks
   useEffect(() => {
@@ -100,54 +97,18 @@ export default function TaskComponent() {
     initWebApp();
   }, []);
 
- // Start the countdown when a task is clicked
- const handleSocialTaskComplete = (taskId: number) => {
-  const updatedTasks = tasks.map((task) => {
-    if (task.id === taskId) {
-      return { ...task, status: 'pending' as 'pending' }; // Set task to 'pending'
-    }
-    return task;
-  });
-  setTasks(updatedTasks);
-
-  // Set the countdown for the task
-  setCountdowns((prev) => ({ ...prev, [taskId]: 60 })); // Set 60 seconds countdown for the task
-
-  // Start the countdown interval
-  const countdownInterval = setInterval(() => {
-    setCountdowns((prev) => {
-      if (prev[taskId] > 1) {
-        return { ...prev, [taskId]: prev[taskId] - 1 };
-      } else {
-        clearInterval(countdownInterval); // Stop the countdown when it reaches 0
-
-        // Ask for confirmation after 60 seconds
-        const confirmTaskCompletion = window.confirm('Did you complete the task?');
-        if (confirmTaskCompletion) {
-          const approvedTasks = updatedTasks.map((task) => {
-            if (task.id === taskId) {
-              return { ...task, status: 'approved' as 'approved' }; // Mark as 'approved'
-            }
-            return task;
-          });
-          setTasks(approvedTasks);
-
-          // Update player's balance and grant reward
-          const completedTask = approvedTasks.find((task) => task.id === taskId);
-          if (completedTask && completedTask.status === 'approved') {
-            const newBalance = balance + completedTask.reward;
-            setBalance(newBalance);
-            updatePlayerBalance(userData!.id, completedTask.reward);
-          }
-        }
-
-        // Remove the countdown for this task
-        const { [taskId]: _, ...rest } = prev;
-        return rest;
+  // Handle task completion when the player clicks on a social task
+  const handleSocialTaskClick = (taskId: number) => {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        return { ...task, status: 'pending' as 'pending' }; // Set task to 'pending'
       }
+      return task;
     });
-  }, 1000); // Run every second
-};
+    setTasks(updatedTasks);
+
+    // You can now handle what happens when the user comes back, e.g., mark as 'approved'
+  };
 
   return (
     <div className="p-2">
@@ -181,7 +142,7 @@ export default function TaskComponent() {
         {activeTab === 'in-game' ? (
           <div className="space-y-4">
             {tasks.map((task) => (
-              <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg ">
+              <div key={task.id} className="flex justify-between items-center bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg">
                 <div className="flex items-center space-x-6 gap-2">
                   <FaBug className="text-4xl text-yellow-500" />
                   <div>
@@ -190,15 +151,10 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleSocialTaskComplete(task.id)}
-                  disabled={task.completed || loadingTaskId === task.id} // Disable if the task is loading or already completed
-                  className={`py-2 px-4 rounded-lg shadow-md ${
-                    task.completed || loadingTaskId === task.id
-                      ? 'bg-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
+                  disabled={task.completed}
+                  className={`py-2 px-4 rounded-lg shadow-md ${task.completed ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                 >
-                  {loadingTaskId === task.id ? 'Loading...' : task.completed ? 'Claimed' : 'Claim'}
+                  {task.completed ? 'Claimed' : 'Claim'}
                 </button>
               </div>
             ))}
@@ -219,28 +175,16 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <a
-                href={task.status === 'not_started' ? task.link : undefined} // Only allow navigation if task is not started
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
-                  task.status === 'approved' ? 'cursor-not-allowed opacity-50' : ''
-                }`}
-                onClick={(e) => {
-                  if (task.status === 'approved') {
-                    e.preventDefault(); // Prevent clicking if already approved
-                  } else if (task.status === 'not_started') {
-                    e.preventDefault(); // Prevent navigation and start the task process
-                    handleSocialTaskComplete(task.id); // Trigger task completion
-                  }
-                }}
-              >
-                {task.status === 'pending'
-                  ? `Approving in ${countdowns[task.id]} seconds...` // Show countdown if task is pending
-                  : task.status === 'approved'
-                  ? 'Approved' // Show approved state
-                  : 'Start'} // Show start state
-              </a>
-
+                  href={task.link} // Directly link to the task
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md ${
+                    task.status === 'approved' ? 'cursor-not-allowed opacity-50' : ''
+                  }`}
+                  onClick={() => handleSocialTaskClick(task.id)} // Handle the task click
+                >
+                  {task.status === 'pending' ? 'Pending Approval...' : task.status === 'approved' ? 'Approved' : 'Start'}
+                </a>
               </div>
             ))}
           </div>
@@ -249,7 +193,3 @@ export default function TaskComponent() {
     </div>
   );
 }
-function setCountdowns(arg0: (prev: any) => any) {
-  throw new Error('Function not implemented.');
-}
-
