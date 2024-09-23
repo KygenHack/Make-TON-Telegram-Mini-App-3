@@ -221,7 +221,7 @@ export default function TaskComponent() {
                   {task.platform === 'Instagram' && <FaInstagram className="text-2xl text-pink-500" />}
                   <div>
                     <p className="text-sm">{task.description}</p>
-                    <p className="text-xs">+{task.reward} Scorpion</p>
+                    <p className="text-xs text-[#f48d2f]">+{task.reward} Scorpion</p>
                   </div>
                 </div>
                 <a
