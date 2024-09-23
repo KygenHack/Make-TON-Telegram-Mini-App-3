@@ -198,7 +198,7 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <Modal
-                  header={<ModalHeader>Task Confirmation</ModalHeader>}
+                  header={<ModalHeader>Task Instructions</ModalHeader>} // Changed to Task Instructions
                   trigger={(
                     <button
                       onClick={() => handleSocialTaskComplete(task.id)} // This triggers the modal directly
@@ -208,18 +208,15 @@ export default function TaskComponent() {
                     </button>
                   )}
                 >
-                  <Placeholder description="Did you complete the task?" header="Task Confirmation">
-                    <img
-                      alt="Telegram sticker"
-                      src="https://xelene.me/telegram.gif"
-                      style={{
-                        display: 'block',
-                        height: '144px',
-                        width: '144px',
-                      }}
-                    />
-                    <Button size="m" onClick={confirmTaskCompletion}>Yes</Button>
-                    <Button size="m" onClick={() => setCurrentTaskId(null)}>No</Button>
+                  <Placeholder description={task.description} header="Task Instructions">
+                    <p>Follow the link to complete the task:</p>
+                    <a href={task.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                      {task.platform} Link
+                    </a>
+                    <div className="mt-4">
+                      <Button size="m" onClick={confirmTaskCompletion}>Complete Task</Button>
+                      <Button size="m" onClick={() => setCurrentTaskId(null)}>Cancel</Button>
+                    </div>
                   </Placeholder>
                 </Modal>
               </div>
