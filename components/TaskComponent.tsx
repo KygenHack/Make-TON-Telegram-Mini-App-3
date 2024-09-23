@@ -5,6 +5,7 @@ import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug }
 import { getPlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient';
 import { Title, Modal, Placeholder, Button } from '@telegram-apps/telegram-ui';
 import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
+import { ModalClose } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalClose/ModalClose';
 
 // Define user data interface
 interface UserData {
@@ -53,6 +54,7 @@ export default function TaskComponent() {
   const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null); // Track the current task in modal
   const [isLinkClicked, setIsLinkClicked] = useState(false); // Track whether the task link was clicked
+  const [showCompleteMessage, setShowCompleteMessage] = useState(false); // Show a message when the task is completed
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -89,6 +91,7 @@ export default function TaskComponent() {
             prevTasks.map((t) => (t.id === taskId ? { ...t, completed: true } : t))
           );
           await updatePlayerBalance(userData!.id, taskToComplete.reward);
+          setShowCompleteMessage(true); // Show task completion message
         } else {
           alert("You don't meet the required balance to complete this task.");
         }
@@ -114,7 +117,7 @@ export default function TaskComponent() {
     if (currentTaskId !== null) {
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
-          task.id === currentTaskId ? { ...task, status: 'approved' } : task
+          task.id === currentTaskId ? { ...task, status: 'approved', completed: true } : task // Mark the task as completed
         )
       );
 
@@ -123,6 +126,7 @@ export default function TaskComponent() {
         const newBalance = balance + completedTask.reward;
         setBalance(newBalance); // Update the player's balance with the reward
         updatePlayerBalance(userData!.id, completedTask.reward); // Save balance to the database
+        setShowCompleteMessage(true); // Show task completion message
       }
 
       setCurrentTaskId(null); // Reset task tracking
@@ -183,7 +187,7 @@ export default function TaskComponent() {
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
                 >
-                  {loadingTaskId === task.id ? 'Loading...' : task.completed ? 'Claimed' : 'Claim'}
+                  {task.completed ? 'Done' : loadingTaskId === task.id ? 'Loading...' : 'Claim'}
                 </button>
               </div>
             ))}
@@ -204,13 +208,13 @@ export default function TaskComponent() {
                   </div>
                 </div>
                 <Modal
-                  header={<ModalHeader>Task Instructions</ModalHeader>} // Task Instructions
+                  header={<ModalHeader after={<ModalClose>Close</ModalClose>}>Task Instructions</ModalHeader>} // Task Instructions with Close Button
                   trigger={(
                     <button
                       onClick={() => handleSocialTaskComplete(task.id)} // This triggers the modal directly
                       className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-md`}
                     >
-                      Start
+                      {task.completed ? 'Done' : 'Start'}
                     </button>
                   )}
                 >
@@ -238,6 +242,18 @@ export default function TaskComponent() {
           </div>
         )}
       </div>
+
+      {/* Completion message */}
+      {showCompleteMessage && (
+        <Modal
+          header={<ModalHeader after={<ModalClose>Close</ModalClose>}>Task Completed</ModalHeader>}
+          trigger={<span />} // Hidden trigger to open the modal
+        >
+          <Placeholder description="You have completed the task! You can move on to the next one." header="Well done!">
+            <Button size="m" onClick={() => setShowCompleteMessage(false)}>OK</Button>
+          </Placeholder>
+        </Modal>
+      )}
     </div>
   );
 }
