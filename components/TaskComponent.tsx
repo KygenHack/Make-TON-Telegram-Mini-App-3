@@ -48,11 +48,11 @@ const getInGameTasksBasedOnBalance = (balance: number): Task[] => {
 // Define the social tasks
 const socialTasksInitial: Task[] = [
   {
-    id: 101, platform: 'Telegram', description: 'Join our Telegram Channel', link: 'https://t.me/example_channel', reward: 10, status: 'not_started',
+    id: 101, platform: 'Telegram', description: 'Join Telegram Channel', link: 'https://t.me/example_channel', reward: 10, status: 'not_started',
     completed: false
   },
   {
-    id: 102, platform: 'Telegram', description: 'Join our Telegram Community', link: 'https://t.me/example_community', reward: 10, status: 'not_started',
+    id: 102, platform: 'Telegram', description: 'Join Telegram Community', link: 'https://t.me/example_community', reward: 10, status: 'not_started',
     completed: false
   },
   {
