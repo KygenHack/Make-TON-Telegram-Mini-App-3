@@ -40,11 +40,11 @@ function MainPage() {
     initWebApp();
   }, []);
 
-  // Show preloader for 2 minutes
+  // Show preloader for 20 seconds
   useEffect(() => {
     const preloaderTimeout = setTimeout(() => {
-      setShowPreloader(false); // After 2 minutes, hide the preloader
-    }, 120000); // 2 minutes delay
+      setShowPreloader(false); // After 20 seconds, hide the preloader
+    }, 20000); // 20 seconds delay
 
     return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
   }, []);
