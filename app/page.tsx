@@ -40,19 +40,26 @@ function MainPage() {
     initWebApp();
   }, []);
 
-  // Show preloader for 20 seconds
+  // Check if the preloader has already been shown using localStorage
   useEffect(() => {
-    const preloaderTimeout = setTimeout(() => {
-      setShowPreloader(false); // After 20 seconds, hide the preloader
-    }, 4000); // 20 seconds delay
+    const preloaderShown = localStorage.getItem('preloaderShown');
+    if (!preloaderShown) {
+      // Show the preloader for 5 seconds only once
+      const preloaderTimeout = setTimeout(() => {
+        setShowPreloader(false);
+        localStorage.setItem('preloaderShown', 'true'); // Set flag so the preloader doesn’t show again
+      }, 5000); // 5 seconds delay
 
-    return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
+      return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
+    } else {
+      // If the preloader was shown before, don't show it again
+      setShowPreloader(false);
+    }
   }, []);
 
   // Dynamically import the GameComponent and NavTop
   const GameComponent = dynamic(() => import('../components/GameComponent'), { ssr: false });
   const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
-  const Preloader = dynamic(() => import('@/components/Preloader'), { ssr: false });
 
   return (
     <>
