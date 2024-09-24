@@ -60,6 +60,7 @@ function MainPage() {
   // Dynamically import the GameComponent and NavTop
   const GameComponent = dynamic(() => import('../components/GameComponent'), { ssr: false });
   const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
+  const Preloader = dynamic(() => import('@/components/Preloader'), { ssr: false });
 
   return (
     <>
