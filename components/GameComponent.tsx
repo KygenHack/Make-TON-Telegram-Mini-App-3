@@ -190,6 +190,8 @@ export default function GameComponent() {
               miningLevel: 1, // Update with your current logic
               lastHarvestTime: Date.now(),
               lastExhaustedTime: Date.now(),
+              lastLoginDate: '',
+              loginStreak: 0
             });
             return newState;
           } else {
@@ -234,6 +236,8 @@ export default function GameComponent() {
         lastHarvestTime: Date.now(),
         lastExhaustedTime: Date.now(),
         cooldownEndTime,
+        lastLoginDate: '',
+        loginStreak: 0
       });
     }
   };
