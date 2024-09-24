@@ -60,19 +60,10 @@ export default function GameComponent() {
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [showPreloader, setShowPreloader] = useState(true); // Add showPreloader state
   const [showModal, setShowModal] = useState<boolean>(false); // Show modal for daily reward
   const [dailyStreak, setDailyStreak] = useState<number>(0); // Track login streak
   const [dailyReward, setDailyReward] = useState<number>(0); // Track daily reward
-
-  // Add a delay for the preloader (50 seconds)
-  useEffect(() => {
-    const preloaderTimeout = setTimeout(() => {
-      setShowPreloader(false); // After 50 seconds, hide the preloader
-    }, 50000); // 50 seconds delay
-
-    return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
-  }, []);
+  
 
   // Initialize player data
   useEffect(() => {
@@ -262,11 +253,6 @@ export default function GameComponent() {
     const remainingSeconds = seconds % 60;
     return `${hours}h ${minutes}m ${remainingSeconds}s`;
   };
-
-  // Show the preloader for 50 seconds, then render the game component
-  if (showPreloader || isLoading) {
-    return <Preloader />;
-  }
 
   return (
     <div className="p-6">

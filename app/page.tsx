@@ -1,10 +1,10 @@
 'use client';
 
-import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
 import WebApp from '@twa-dev/sdk';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Preloader from '@/components/Preloader'; // Assuming you have a Preloader component
 
 // Define the interface for user data
 interface UserData {
@@ -17,22 +17,13 @@ interface UserData {
   photoUrl?: string;
 }
 
-// Define the interface for game data
-interface GameData {
-  scorpionsCaught: number;
-  energy: number;
-  isHolding: boolean;
-}
-
 // Main component definition with a proper name
 function MainPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState('');
   const [initData, setInitData] = useState('');
   const [startParam, setStartParam] = useState('');
- 
-
-  
+  const [showPreloader, setShowPreloader] = useState(true); // Preloader state
 
   useEffect(() => {
     const initWebApp = async () => {
@@ -49,24 +40,41 @@ function MainPage() {
     initWebApp();
   }, []);
 
-  // Dynamically import the GameComponent
-const GameComponent = dynamic(() => import('../components/GameComponent'), { ssr: false });
-const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
+  // Show preloader for 2 minutes
+  useEffect(() => {
+    const preloaderTimeout = setTimeout(() => {
+      setShowPreloader(false); // After 2 minutes, hide the preloader
+    }, 120000); // 2 minutes delay
+
+    return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
+  }, []);
+
+  // Dynamically import the GameComponent and NavTop
+  const GameComponent = dynamic(() => import('../components/GameComponent'), { ssr: false });
+  const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
 
   return (
     <>
       <div className="bg-black min-h-screen flex flex-col">
-        <NavTop />
-        <div className="flex-grow w-full bg-fish mt-4 rounded-t-[16px] relative top-glow z-0">
-          <div className="absolute top-[2px] left-0 right-0 bottom-0 bg-[#1d2025] rounded-t-[16px] p-6 carpet33">
-            <div className="justify-center items-center">
-            <GameComponent />
+        {showPreloader ? (
+          <Preloader />
+        ) : (
+          <>
+            <NavTop />
+            <div className="flex-grow w-full bg-fish mt-4 rounded-t-[16px] relative top-glow z-0">
+              <div className="absolute top-[2px] left-0 right-0 bottom-0 bg-[#1d2025] rounded-t-[16px] p-6 carpet33">
+                <div className="justify-center items-center">
+                  <GameComponent />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-      <div className="fixed bottom-0 left-0 right-0">
-        <NavBar />
+
+            {/* Only show NavBar when preloader is hidden */}
+            <div className="fixed bottom-0 left-0 right-0">
+              <NavBar />
+            </div>
+          </>
+        )}
       </div>
     </>
   );
