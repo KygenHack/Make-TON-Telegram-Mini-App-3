@@ -78,7 +78,6 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       <p className="text-[#f48d2f] mb-6">
           Invite your friends and both of you will receive bonuses. Score 10% from buddies + 2.5% from their referrals
         </p>
-        <p className="text-sm text-[#f48d2f] mb-4"></p>
       </div>
 
       <div className="flex item-center justify-between mt-6">

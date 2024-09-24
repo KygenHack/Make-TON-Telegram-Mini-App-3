@@ -3,18 +3,6 @@
 import { openDB } from 'idb';
 import { supabase } from './useSupabase';
 
-// Define Task interface
-export interface Task {
-  id: number;
-  description: string;
-  completed: boolean;
-  reward: number;
-  requiredBalance?: number;
-  status?: 'pending' | 'approved' | 'not_started';
-  platform?: string;
-  link?: string;
-}
-
 // Define PlayerData interface
 export interface PlayerData {
   energy: number;
@@ -159,56 +147,4 @@ export const initializePlayerData = async (playerData: PlayerData, referrerId?: 
 export const getReferredPlayers = async (referrerId: number): Promise<number[] | undefined> => {
   const referrerData = await getPlayerData(referrerId);
   return referrerData?.referredPlayers || [];
-};
-
-// ====================== Task Management ====================== //
-
-// Save tasks to both IndexedDB and Supabase
-export const savePlayerTasks = async (tasks: Task[], playerId: number): Promise<void> => {
-  const db = await dbPromise;
-  await db.put('tasks', { id: playerId, tasks });
-
-  // Save tasks to Supabase
-  const { error } = await supabase
-    .from('tasks')
-    .upsert([{ id: playerId, tasks }], { onConflict: 'id' });
-
-  if (error) {
-    console.error('Error saving tasks to Supabase:', error);
-  }
-};
-
-// Debounced version of savePlayerTasks
-const debouncedSavePlayerTasks = debounceSave(savePlayerTasks, 1000);
-
-// Fetch tasks from IndexedDB or Supabase
-export const getPlayerTasks = async (playerId: number): Promise<Task[] | undefined> => {
-  const db = await dbPromise;
-  const taskData = await db.get('tasks', playerId);
-
-  if (!taskData) {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('tasks')
-      .eq('id', playerId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching tasks from Supabase:', error);
-      return undefined;
-    }
-
-    if (data) {
-      await savePlayerTasks(data.tasks, playerId); // Save fetched tasks back to IndexedDB
-      return data.tasks;
-    }
-  }
-
-  return taskData?.tasks || [];
-};
-
-// Update tasks in both IndexedDB and Supabase
-export const updatePlayerTasks = async (playerId: number, updatedTasks: Task[]): Promise<void> => {
-  await savePlayerTasks(updatedTasks, playerId);
-  console.log(`Player ${playerId}'s tasks updated.`);
 };
