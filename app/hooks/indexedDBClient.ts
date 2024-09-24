@@ -22,7 +22,10 @@ export interface PlayerData {
   cooldownEndTime?: number; // Timestamp of when the cooldown ends
   referrerId?: number; // ID of the referrer
   referredPlayers?: number[]; // List of referred players' IDs
+  lastLoginDate: string; // Date of the player's last login
+  loginStreak: number; // Current login streak of the player
 }
+
 
 // Open the IndexedDB database and handle version upgrades
 const dbPromise = openDB('ScorpionGameDB', 2, {

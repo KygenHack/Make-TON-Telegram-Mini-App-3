@@ -7,9 +7,7 @@ import { Title } from '@telegram-apps/telegram-ui';
 import { getPlayerData, initializePlayerData, savePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import your DB functions
 import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug, FaFlagCheckered, FaLevelUpAlt, FaTools } from 'react-icons/fa';
 import Image from 'next/image';
-
-
-
+import DailyStreakModal from './DailyStreakModal'; // Import the daily streak modal component
 
 // Define user data interface
 interface UserData {
@@ -39,7 +37,6 @@ interface GameState {
   tasks: Task[];
   level: number;  // Add level to the game state
   holdDuration: number; // Add hold duration tracking
-
 }
 
 export default function GameComponent() {
@@ -60,17 +57,9 @@ export default function GameComponent() {
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [activeTab, setActiveTab] = useState<'in-game' | 'social'>('in-game');
-
-  // Add social tasks
-  const socialTasks = [
-    { platform: 'Telegram', task: 'Join our TG channel', link: 'https://t.me/example_channel', reward: 10 },
-    { platform: 'Telegram', task: 'Join our TG Community', link: 'https://t.me/example_channel', reward: 10 },
-    { platform: 'Twitter', task: 'Follow us on Twitter', link: 'https://twitter.com/example_account', reward: 8 },
-    { platform: 'Facebook', task: 'Like us Facebook ', link: 'https://facebook.com/example_page', reward: 5 },
-    { platform: 'YouTube', task: 'Subscribe to our YouTube channel', link: 'https://youtube.com/example_channel', reward: 7 },
-    { platform: 'Instagram', task: 'Follow us on Instagram', link: 'https://instagram.com/example_profile', reward: 6 },
-  ];
+  const [showModal, setShowModal] = useState<boolean>(false); // Show modal for daily reward
+  const [dailyStreak, setDailyStreak] = useState<number>(0); // Track login streak
+  const [dailyReward, setDailyReward] = useState<number>(0); // Track daily reward
 
   // Initialize player data
   useEffect(() => {
@@ -91,11 +80,17 @@ export default function GameComponent() {
           miningLevel: 1,
           lastHarvestTime: Date.now(),
           lastExhaustedTime: Date.now(),
-          energy: 0,
-          cooldownEndTime: 0, // Initialize cooldownEndTime to 0
+          energy: 100, // Default energy
+          cooldownEndTime: 0,
+          lastLoginDate: new Date().toISOString().split('T')[0], // Track last login date
+          loginStreak: 1, // Start with a 1-day streak
         });
+        setDailyStreak(1);
+        setDailyReward(calculateDailyReward(1));
+        setShowModal(true); // Show reward modal on first login
       } else {
-        // Restore balance, energy, and cooldown from IndexedDB
+        // Check if the player qualifies for a daily login reward
+        await checkDailyLoginReward(playerData);
         setBalance(playerData.balance);
         setState((s) => ({ ...s, energy: playerData.energy }));
 
@@ -111,6 +106,45 @@ export default function GameComponent() {
     initWebApp();
   }, []);
 
+  const checkDailyLoginReward = async (playerData: any) => {
+    const today = new Date().toISOString().split('T')[0];
+    const lastLoginDate = playerData.lastLoginDate;
+
+    if (today !== lastLoginDate) {
+      let newLoginStreak = playerData.loginStreak;
+
+      // Continue the streak if last login was yesterday
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (new Date(lastLoginDate).toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
+        newLoginStreak = Math.min(newLoginStreak + 1, 30); // Cap at 30 days
+      } else {
+        // Reset streak if more than a day passed
+        newLoginStreak = 1;
+      }
+
+      // Calculate reward based on streak
+      const reward = calculateDailyReward(newLoginStreak);
+
+      // Update player data
+      playerData.lastLoginDate = today;
+      playerData.loginStreak = newLoginStreak;
+      playerData.balance += reward;
+
+      // Update player state and show modal
+      setDailyStreak(newLoginStreak);
+      setDailyReward(reward);
+      setShowModal(true);
+
+      await savePlayerData(playerData); // Save updated data to IndexedDB
+    }
+  };
+
+  // Calculate reward based on login streak
+  const calculateDailyReward = (streak: number): number => {
+    return streak * 10; // Example: reward increases by 10 each day
+  };
+
   useEffect(() => {
     if (cooldownTimeRemaining > 0) {
       const cooldownInterval = setInterval(() => {
@@ -121,8 +155,6 @@ export default function GameComponent() {
       setState((prev) => ({ ...prev, energy: 100 }));
     }
   }, [cooldownTimeRemaining, state.isHolding, state.energy]);
-
-  
 
   const handleHoldStart = () => {
     if (state.energy > 0 && !state.isHolding) {
@@ -206,27 +238,6 @@ export default function GameComponent() {
     }
   };
 
-  // Task completion logic for social tasks
-  const handleTaskComplete = async (taskId: number) => {
-    const updatedTasks = state.tasks.map((task) => {
-      if (task.id === taskId && !task.completed) {
-        const newBalance = balance + task.reward;
-        setBalance(newBalance);
-        setState((prevState) => ({
-          ...prevState,
-          tasks: prevState.tasks.map((t) => (t.id === task.id ? { ...t, completed: true } : t)),
-        }));
-        updatePlayerBalance(userData!.id, task.reward);
-      }
-      return task;
-    });
-
-    setState((prevState) => ({
-      ...prevState,
-      tasks: updatedTasks,
-    }));
-  };
-
   // Format time for cooldown
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -237,6 +248,11 @@ export default function GameComponent() {
 
   return (
     <div className="p-6">
+      {/* Daily Streak Modal */}
+      {showModal && (
+        <DailyStreakModal streak={dailyStreak} reward={dailyReward} onClose={() => setShowModal(false)} />
+      )}
+
       <div className="flex justify-center">
         <div className="text-center">
           <Title caps level="1" weight="1" className="text-5xl text-white">
