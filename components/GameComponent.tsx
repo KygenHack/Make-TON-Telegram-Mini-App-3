@@ -69,7 +69,7 @@ export default function GameComponent() {
   useEffect(() => {
     const preloaderTimeout = setTimeout(() => {
       setShowPreloader(false); // After 50 seconds, hide the preloader
-    }, 120000); // 50 seconds delay
+    }, 50000); // 50 seconds delay
 
     return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
   }, []);
