@@ -44,7 +44,7 @@ function MainPage() {
   useEffect(() => {
     const preloaderTimeout = setTimeout(() => {
       setShowPreloader(false); // After 20 seconds, hide the preloader
-    }, 20000); // 20 seconds delay
+    }, 8000); // 20 seconds delay
 
     return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
   }, []);
