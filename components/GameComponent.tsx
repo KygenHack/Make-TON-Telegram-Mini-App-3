@@ -60,7 +60,7 @@ export default function GameComponent() {
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
   const [balance, setBalance] = useState(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [showPreloader, setShowPreloader] = useState(true); // Show preloader state
+  const [showPreloader, setShowPreloader] = useState(true); // Add showPreloader state
   const [showModal, setShowModal] = useState<boolean>(false); // Show modal for daily reward
   const [dailyStreak, setDailyStreak] = useState<number>(0); // Track login streak
   const [dailyReward, setDailyReward] = useState<number>(0); // Track daily reward
