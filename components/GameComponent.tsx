@@ -64,6 +64,15 @@ export default function GameComponent() {
   const [dailyStreak, setDailyStreak] = useState<number>(0); // Track login streak
   const [dailyReward, setDailyReward] = useState<number>(0); // Track daily reward
 
+  // Add a delay for the preloader (50 seconds)
+  useEffect(() => {
+    const preloaderTimeout = setTimeout(() => {
+      setShowPreloader(false); // After 50 seconds, hide the preloader
+    }, 50000); // 50 seconds delay
+
+    return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
+  }, []);
+
   // Initialize player data
   useEffect(() => {
     const initWebApp = async () => {
@@ -253,8 +262,8 @@ export default function GameComponent() {
     return `${hours}h ${minutes}m ${remainingSeconds}s`;
   };
 
- // If still loading, show the preloader
- if (isLoading) {
+ // Show the preloader for 50 seconds, then render the game component
+ if (Preloader || isLoading) {
   return <Preloader />;
 }
 
