@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug } from 'react-icons/fa';
 import useAuth from '@/app/hooks/useAuth'; // Import the useAuth hook
 import { getPlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient';
@@ -21,6 +21,78 @@ interface Task {
   platform?: string;
 }
 
+// Fetch task list (all available tasks in task_list)
+const fetchTaskList = async () => {
+  try {
+    const { data: taskList, error } = await supabase
+      .from('task_list')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching task list:', error.message);
+      return [];
+    }
+
+    return taskList;
+  } catch (error) {
+    console.error('Error fetching task list:', error);
+    return [];
+  }
+};
+
+// Fetch tasks specific to the user (from tasks table)
+const fetchUserTasks = async (userId: number) => {
+  try {
+    const { data: userTasks, error } = await supabase
+      .from('tasks')
+      .select(`
+        id, 
+        completed, 
+        status, 
+        task_list (
+          description, 
+          reward, 
+          required_balance, 
+          platform, 
+          link
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user tasks:', error.message);
+      return [];
+    }
+
+    return userTasks;
+  } catch (error) {
+    console.error('Error fetching user tasks:', error);
+    return [];
+  }
+};
+
+// Assign all tasks from task_list to a user if they don't have tasks yet
+const assignTasksToUser = async (userId: number, taskList: any[]) => {
+  try {
+    const tasksToAssign = taskList.map(task => ({
+      user_id: userId,
+      task_list_id: task.id,
+      completed: false,
+      status: 'not_started',
+    }));
+
+    const { error } = await supabase
+      .from('tasks')
+      .insert(tasksToAssign);
+
+    if (error) {
+      console.error('Error assigning tasks to user:', error.message);
+    }
+  } catch (error) {
+    console.error('Error assigning tasks to user:', error);
+  }
+};
+
 export default function TaskComponent() {
   const { user, isLoading } = useAuth(); // Get the authenticated user from the hook
   const [balance, setBalance] = useState(0);
@@ -31,46 +103,6 @@ export default function TaskComponent() {
   const [isLinkClicked, setIsLinkClicked] = useState(false); // Track whether the social link was clicked
   const [showCompleteMessage, setShowCompleteMessage] = useState(false);
 
-  // Fetch tasks for the player
-  const fetchPlayerTasks = async (userId: number) => {
-    try {
-      const { data: tasks, error } = await supabase
-        .from('tasks')
-        .select(`
-          id, 
-          completed, 
-          status, 
-          task_list (
-            description, 
-            reward, 
-            required_balance, 
-            platform, 
-            link
-          )
-        `)
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching player tasks:', error.message);
-        return [];
-      }
-
-      return tasks.map((task: any) => ({
-        id: task.id,
-        description: task.task_list.description,
-        completed: task.completed,
-        reward: task.task_list.reward,
-        requiredBalance: task.task_list.required_balance,
-        platform: task.task_list.platform,
-        link: task.task_list.link,
-        status: task.status,
-      }));
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      return [];
-    }
-  };
-
   // Fetch player data and tasks when user is authenticated
   useEffect(() => {
     if (!isLoading && user) {
@@ -79,9 +111,34 @@ export default function TaskComponent() {
         if (playerData) {
           setBalance(playerData.balance);
 
-          // Fetch tasks for the player
-          const playerTasks = await fetchPlayerTasks(user.id);
-          setTasks(playerTasks);
+          // Fetch the full task list (available tasks)
+          const taskList = await fetchTaskList();
+
+          // Fetch user-specific tasks
+          let userTasks = await fetchUserTasks(user.id);
+
+          if (userTasks.length === 0) {
+            console.log('No tasks found for user, assigning tasks...');
+            // Assign all tasks from task_list to the user
+            await assignTasksToUser(user.id, taskList);
+
+            // Re-fetch tasks for the user after assigning
+            userTasks = await fetchUserTasks(user.id);
+          }
+
+          // Map and store the user tasks with task details
+          const mappedTasks = userTasks.map((task: any) => ({
+            id: task.id,
+            description: task.task_list.description,
+            completed: task.completed,
+            reward: task.task_list.reward,
+            requiredBalance: task.task_list.required_balance,
+            platform: task.task_list.platform,
+            link: task.task_list.link,
+            status: task.status,
+          }));
+
+          setTasks(mappedTasks);
         }
       })();
     }
