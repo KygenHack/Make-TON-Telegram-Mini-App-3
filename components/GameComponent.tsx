@@ -8,6 +8,8 @@ import { getPlayerData, initializePlayerData, savePlayerData, updatePlayerBalanc
 import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug, FaFlagCheckered, FaLevelUpAlt, FaTools } from 'react-icons/fa';
 import Image from 'next/image';
 import DailyStreakModal from './DailyStreakModal'; // Import the daily streak modal component
+import useAuth from '@/app/hooks/useAuth';
+import Preloader from './Preloader';
 
 // Define user data interface
 interface UserData {
@@ -40,6 +42,7 @@ interface GameState {
 }
 
 export default function GameComponent() {
+  const { user, isLoading } = useAuth();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [state, setState] = useState<GameState>({
     scorpionsCaught: 0,
@@ -249,6 +252,11 @@ export default function GameComponent() {
     const remainingSeconds = seconds % 60;
     return `${hours}h ${minutes}m ${remainingSeconds}s`;
   };
+
+ // If still loading, show the preloader
+ if (isLoading) {
+  return <Preloader />;
+}
 
   return (
     <div className="p-6">
