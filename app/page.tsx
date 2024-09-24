@@ -40,19 +40,24 @@ function MainPage() {
     initWebApp();
   }, []);
 
-  // Check if the preloader has already been shown using localStorage
+  // Check if the preloader has already been shown in the past 24 hours
   useEffect(() => {
-    const preloaderShown = localStorage.getItem('preloaderShown');
-    if (!preloaderShown) {
-      // Show the preloader for 5 seconds only once
+    const preloaderShownTimestamp = localStorage.getItem('preloaderShownTimestamp');
+    const now = Date.now();
+    const twentyFourHours = 3 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+    // If there's no timestamp or if 24 hours have passed, show the preloader again
+    if (!preloaderShownTimestamp || now - parseInt(preloaderShownTimestamp) >= twentyFourHours) {
+      // Show the preloader for 5 seconds
       const preloaderTimeout = setTimeout(() => {
         setShowPreloader(false);
-        localStorage.setItem('preloaderShown', 'true'); // Set flag so the preloader doesn’t show again
+        // Set a new timestamp for the preloader showing time
+        localStorage.setItem('preloaderShownTimestamp', now.toString());
       }, 5000); // 5 seconds delay
 
       return () => clearTimeout(preloaderTimeout); // Cleanup on unmount
     } else {
-      // If the preloader was shown before, don't show it again
+      // If 24 hours have not passed, skip the preloader
       setShowPreloader(false);
     }
   }, []);

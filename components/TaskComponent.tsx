@@ -225,7 +225,7 @@ export default function TaskComponent() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <center>Loading...</center>;
   }
 
   if (!user) {
