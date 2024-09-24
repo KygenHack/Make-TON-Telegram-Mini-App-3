@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug } from 'react-icons/fa';
-import { getPlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import IndexedDB functions
+import { getPlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient';
 import { supabase } from '@/app/hooks/useSupabase'; // Supabase client for tasks
 import { Title, Modal, Placeholder, Button } from '@telegram-apps/telegram-ui';
 import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
@@ -30,6 +30,47 @@ interface Task {
   platform?: string;
 }
 
+// Fetch tasks from task_list and tasks for the player
+const fetchPlayerTasks = async (userId: number) => {
+  try {
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select(`
+        id, 
+        completed, 
+        status, 
+        task_list (
+          description, 
+          reward, 
+          required_balance, 
+          platform, 
+          link
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching player tasks:', error.message);
+      return [];
+    }
+
+    // Map the tasks to a proper format
+    return tasks.map((task: any) => ({
+      id: task.id,
+      description: task.task_list.description,
+      completed: task.completed,
+      reward: task.task_list.reward,
+      requiredBalance: task.task_list.required_balance,
+      platform: task.task_list.platform,
+      link: task.task_list.link,
+      status: task.status,
+    }));
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    return [];
+  }
+};
+
 export default function TaskComponent() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [balance, setBalance] = useState(0);
@@ -39,26 +80,6 @@ export default function TaskComponent() {
   const [currentTaskId, setCurrentTaskId] = useState<number | null>(null);
   const [isLinkClicked, setIsLinkClicked] = useState(false);
   const [showCompleteMessage, setShowCompleteMessage] = useState(false);
-
-  // Fetch tasks for the player
-  const fetchTasksForPlayer = async (playerId: number) => {
-    // Fetch tasks from task_list and tasks table
-    const { data: assignedTasks, error: tasksError } = await supabase
-      .from('tasks')
-      .select('*, task_list(description, reward, required_balance, platform, link)')
-      .eq('user_id', playerId);
-    
-    if (tasksError) {
-      console.error('Error fetching tasks:', tasksError.message);
-      return [];
-    }
-    return assignedTasks.map((task: any) => ({
-      ...task.task_list,
-      id: task.id,
-      completed: task.completed,
-      status: task.status,
-    }));
-  };
 
   // Initialize the player data and fetch tasks
   useEffect(() => {
@@ -72,7 +93,9 @@ export default function TaskComponent() {
         const playerData = await getPlayerData(user.id);
         if (playerData) {
           setBalance(playerData.balance);
-          const playerTasks = await fetchTasksForPlayer(user.id);
+
+          // Fetch the tasks for the player
+          const playerTasks = await fetchPlayerTasks(user.id);
           setTasks(playerTasks);
         }
       } catch (error) {
