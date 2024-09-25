@@ -69,13 +69,13 @@ const ReferralSystem: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>; // Show loading state until data is fetched
+    return <div className='text-center'>Please Wait.</div>; // Show loading state until data is fetched
   }
 
   return (
     <div className="text-primaryLight p-6 rounded-lg shadow-custom max-w-md mx-auto">
       {referrer && (
-        <p className="text-green-400 mb-4">You were referred by user {referrer}</p>
+        <p className="text-green-400 text-center mb-4">You were referred by {referrer}</p>
       )}
 
       <div className="text-center">
@@ -103,13 +103,13 @@ const ReferralSystem: React.FC = () => {
       <div className="space-y-4">
         <button
           onClick={handleInviteFriend}
-          className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded transition duration-300"
+          className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition duration-300"
         >
           Invite Friend
         </button>
         <button
           onClick={handleCopyLink}
-          className="w-full py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded transition duration-300"
+          className="w-full py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition duration-300"
         >
           Copy Invite Link
         </button>
