@@ -2,8 +2,6 @@
 
 import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
-import ReferralSystem from '@/components/ReferralSystem';
-import TaskComponent from '@/components/TaskComponent';
 import WebApp from '@twa-dev/sdk';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
@@ -28,27 +26,9 @@ interface GameData {
 
 // Main component definition with a proper name
 function ReferralPage() {
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [userId, setUserId] = useState('');
-  const [initData, setInitData] = useState('');
-  const [startParam, setStartParam] = useState('');
-
-  useEffect(() => {
-    const initWebApp = async () => {
-      if (typeof window !== 'undefined') {
-        const WebApp = (await import('@twa-dev/sdk')).default;
-        WebApp.ready();
-        setInitData(WebApp.initData);
-        setUserData(WebApp.initDataUnsafe.user as UserData);
-        setUserId(WebApp.initDataUnsafe.user?.id.toString() || '');
-        setStartParam(WebApp.initDataUnsafe.start_param || '');
-      }
-    };
-
-    initWebApp();
-  }, []);
-
+  
   const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
+  const ReferralSystem = dynamic(() => import('@/components/ReferralSystem'), { ssr: false });
 
   return (
     <>
