@@ -17,8 +17,8 @@ const DailyStreakModal: React.FC<DailyStreakModalProps> = ({ streak, reward, onC
         transition={{ duration: 0.3 }}
       >
         <h2 className="text-2xl font-bold text-[#f48d2f]">Daily Login Streak</h2>
-        <p className="mt-4 text-lg">Congratulations! You have a {streak}-day streak.</p>
-        <p className="mt-2 text-lg">You have earned {reward} Scorpions today!</p>
+        <p className="mt-4 text-lg text-black">Congratulations! You have a {streak}-day streak.</p>
+        <p className="mt-2 text-lg text-black">You have earned {reward} Scorpions today!</p>
         <button
           onClick={onClose}
           className="mt-6 bg-[#f48d2f] hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg"
