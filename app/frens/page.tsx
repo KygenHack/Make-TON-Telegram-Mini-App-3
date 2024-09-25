@@ -57,11 +57,7 @@ function ReferralPage() {
         <div className="flex-grow w-full bg-fish mt-4 rounded-t-[16px] relative top-glow z-0">
           <div className="absolute top-[2px] left-0 right-0 bottom-0 bg-[#1d2025] rounded-t-[16px] p-6 carpet33">
             <div className="justify-center items-center">
-            <ReferralSystem
-             initData={initData}
-             userId={userId}
-             startParam={startParam}
-/> 
+            <ReferralSystem/> 
             </div>
           </div>
         </div>
