@@ -1,18 +1,69 @@
-import { supabase } from "@/app/hooks/useSupabase"; 
+import { supabase } from "@/app/hooks/useSupabase";
 
-// Function to save a referral
-export const saveReferral = async (userId: string, referrerId: string) => {
+interface ReferralData {
+  referrals: { [userId: string]: string[] };
+  referredBy: { [userId: string]: string };
+}
+
+// In-memory storage
+let storage: ReferralData = {
+  referrals: {},
+  referredBy: {}
+};
+
+// Function to save referral data to both in-memory storage and Supabase
+export async function saveReferral(userId: string, referrerId: string) {
+  // Save to in-memory storage
+  if (!storage.referrals[referrerId]) {
+    storage.referrals[referrerId] = [];
+  }
+  storage.referrals[referrerId].push(userId);
+  storage.referredBy[userId] = referrerId;
+
+  // Save to Supabase
   const { error } = await supabase
     .from('referrals')
     .insert([{ userId, referrerId }]);
 
   if (error) {
-    throw new Error('Failed to save referral');
+    console.error('Error saving referral to Supabase:', error);
+  } else {
+    console.log('Referral data saved to Supabase');
   }
-};
+}
 
-// Function to get the referrer of a specific user
-export const getReferrer = async (userId: string): Promise<string | null> => {
+// Function to get referrals from in-memory storage or Supabase if not in memory
+export async function getReferrals(userId: string): Promise<string[]> {
+  // Check in-memory storage first
+  if (storage.referrals[userId]) {
+    return storage.referrals[userId];
+  }
+
+  // Fetch referrals from Supabase if not in local storage
+  const { data, error } = await supabase
+    .from('referrals')
+    .select('userId')
+    .eq('referrerId', userId);
+
+  if (error) {
+    console.error('Error fetching referrals from Supabase:', error);
+    return [];
+  }
+
+  const referrals = data.map((referral) => referral.userId);
+  storage.referrals[userId] = referrals; // Update in-memory storage
+
+  return referrals;
+}
+
+// Function to get the referrer of a user from in-memory storage or Supabase
+export async function getReferrer(userId: string): Promise<string | null> {
+  // Check in-memory storage first
+  if (storage.referredBy[userId]) {
+    return storage.referredBy[userId];
+  }
+
+  // Fetch referrer from Supabase if not in local storage
   const { data, error } = await supabase
     .from('referrals')
     .select('referrerId')
@@ -20,48 +71,35 @@ export const getReferrer = async (userId: string): Promise<string | null> => {
     .single();
 
   if (error) {
-    throw new Error('Failed to fetch referrer');
+    console.error('Error fetching referrer from Supabase:', error);
+    return null;
   }
 
-  return data?.referrerId || null;
-};
+  const referrerId = data?.referrerId || null;
+  storage.referredBy[userId] = referrerId; // Update in-memory storage
 
-// Function to get all referrals for a specific user
-export const getReferrals = async (userId: string): Promise<string[]> => {
+  return referrerId;
+}
+
+// Optional: Fetch all referral data from Supabase and sync with in-memory storage
+export async function fetchReferralsFromSupabase() {
   const { data, error } = await supabase
     .from('referrals')
-    .select('userId')
-    .eq('referrerId', userId);
+    .select('*');
 
   if (error) {
-    throw new Error('Failed to fetch referrals');
+    console.error('Error fetching referrals from Supabase:', error);
+  } else {
+    // Sync Supabase data with in-memory storage
+    data.forEach((entry) => {
+      const { userId, referrerId } = entry;
+      if (!storage.referrals[referrerId]) {
+        storage.referrals[referrerId] = [];
+      }
+      storage.referrals[referrerId].push(userId);
+      storage.referredBy[userId] = referrerId;
+    });
+
+    console.log('Referral data fetched and synced with in-memory storage:', storage);
   }
-
-  return data.map(referral => referral.userId);
-};
-
-// Function to claim the referral bonus
-export const claimReferralBonus = async (userId: string): Promise<void> => {
-  // Logic for transferring the referral bonus to the scorpion balance
-  // Fetch the user and update their balance
-  // Example:
-  const { data, error } = await supabase
-    .from('players')
-    .select('balance, referralBonus')
-    .eq('id', userId)
-    .single();
-
-  if (error || !data) {
-    throw new Error('Failed to fetch player data');
-  }
-
-  const newBalance = data.balance + data.referralBonus;
-  await supabase
-    .from('players')
-    .update({ balance: newBalance, referralBonus: 0 })
-    .eq('id', userId);
-
-  if (error) {
-    throw new Error('Failed to claim referral bonus');
-  }
-};
+}
