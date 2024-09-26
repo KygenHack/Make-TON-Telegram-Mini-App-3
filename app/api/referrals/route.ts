@@ -1,26 +1,16 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/app/hooks/useSupabase';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
-    return saveReferral(req, res);
-  } else if (req.method === 'GET') {
-    return getReferrals(req, res);
-  } else {
-    res.setHeader('Allow', ['POST', 'GET']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-}
-
-// Save referral information
-async function saveReferral(req: NextApiRequest, res: NextApiResponse) {
-  const { userId, referrerId } = req.body;
-
-  if (!userId || !referrerId) {
-    return res.status(400).json({ error: 'Missing userId or referrerId' });
-  }
-
+export const POST = async (req: Request) => {
   try {
+    const { userId, referrerId } = await req.json();
+
+    if (!userId || !referrerId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing userId or referrerId' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check if referral already exists
     const { data, error: fetchError } = await supabase
       .from('referrals')
@@ -43,26 +33,31 @@ async function saveReferral(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    return res.status(200).json({ message: 'Referral saved successfully' });
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error saving referral:', error.message);
-    } else {
-      console.error('Unknown error:', error);
-    }
-    return res.status(500).json({ error: 'Failed to save referral' });
+    return new Response(JSON.stringify({ message: 'Referral saved successfully' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error: any) {
+    console.error('Error saving referral:', error.message);
+    return new Response(
+      JSON.stringify({ error: 'Failed to save referral' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-}
+};
 
-// Fetch referrals for the user
-async function getReferrals(req: NextApiRequest, res: NextApiResponse) {
-  const { userId } = req.query;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'Missing userId' });
-  }
-
+export const GET = async (req: Request) => {
   try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing userId' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch referrals
     const { data: referrals, error: referralsError } = await supabase
       .from('referrals')
@@ -73,13 +68,15 @@ async function getReferrals(req: NextApiRequest, res: NextApiResponse) {
       throw new Error(referralsError.message);
     }
 
-    return res.status(200).json({ referrals });
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error fetching referrals:', error.message);
-    } else {
-      console.error('Unknown error:', error);
-    }
-    return res.status(500).json({ error: 'Failed to fetch referrals' });
+    return new Response(JSON.stringify({ referrals }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error: any) {
+    console.error('Error fetching referrals:', error.message);
+    return new Response(
+      JSON.stringify({ error: 'Failed to fetch referrals' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-}
+};
