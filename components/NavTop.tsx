@@ -51,16 +51,16 @@ export default function NavTop() {
 
   // Define mining status based on balance
   const getMiningStatus = (balance: number): string => {
-    if (balance >= 5000) return 'Galactic Miner';
-    if (balance >= 4000) return 'Mythical Miner';
-    if (balance >= 3500) return 'Legendary Miner';
-    if (balance >= 3000) return 'Grandmaster Miner';
-    if (balance >= 2500) return 'Master Miner';
-    if (balance >= 2000) return 'Expert Miner';
-    if (balance >= 1500) return 'Skilled Miner';
-    if (balance >= 1000) return 'Apprentice Miner';
+    if (balance >= 5000000) return 'Galactic Miner';
+    if (balance >= 1000000) return 'Mythical Miner';
+    if (balance >= 850000) return 'Legendary Miner';
+    if (balance >= 550000) return 'Grandmaster Miner';
+    if (balance >= 350000) return 'Master Miner';
+    if (balance >= 100000) return 'Expert Miner';
+    if (balance >= 50000) return 'Skilled Miner';
+    if (balance >= 10000) return 'Apprentice Miner';
     if (balance >= 500) return 'Novice Miner';
-    return 'Trail Hustler';
+    return 'Scorpion Hustler';
   };
 
   return (
