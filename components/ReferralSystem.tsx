@@ -69,7 +69,7 @@ const ReferralSystem: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div className='text-center'>Please Wait.</div>; // Show loading state until data is fetched
+    return <div className='text-center'>Please Wait</div>; // Show loading state until data is fetched
   }
 
   return (
@@ -80,6 +80,7 @@ const ReferralSystem: React.FC = () => {
 
       <div className="text-center">
         <h2 className="text-3xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
+        
         <p className="text-[#f48d2f] mb-6">
           Invite your friends and both of you will receive bonuses. Score 10% from buddies + 2.5% from their referrals
         </p>

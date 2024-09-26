@@ -4,25 +4,12 @@ import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { scorpion } from '@/app/images';
 import { Title } from '@telegram-apps/telegram-ui';
-import { getPlayerData, initializePlayerData, savePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient'; // Import your DB functions
-import { FaTelegramPlane, FaTwitter, FaFacebook, FaYoutube, FaInstagram, FaBug, FaFlagCheckered, FaLevelUpAlt, FaTools } from 'react-icons/fa';
-import Image from 'next/image';
-import DailyStreakModal from './DailyStreakModal'; // Import the daily streak modal component
+import { getPlayerData, PlayerData, savePlayerData, updatePlayerBalance } from '@/app/hooks/indexedDBClient';
+import DailyStreakModal from './DailyStreakModal';
 import useAuth from '@/app/hooks/useAuth';
 import Preloader from './Preloader';
+import Image from 'next/image';
 
-// Define user data interface
-interface UserData {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code: string;
-  is_premium?: boolean;
-  photoUrl?: string;
-}
-
-// Define task structure
 interface Task {
   id: number;
   description: string;
@@ -30,75 +17,72 @@ interface Task {
   reward: number;
 }
 
-// Define game state interface
 interface GameState {
   scorpionsCaught: number;
   energy: number;
   isHolding: boolean;
   reward: number;
   tasks: Task[];
-  level: number;  // Add level to the game state
-  holdDuration: number; // Add hold duration tracking
+  level: number;
+  holdDuration: number;
 }
 
 export default function GameComponent() {
-  const { user, isLoading } = useAuth();
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const { user, playerData, isLoading } = useAuth();
   const [state, setState] = useState<GameState>({
     scorpionsCaught: 0,
     energy: 100,
     isHolding: false,
     reward: 0,
-    level: 1,  // Initial player level
-    holdDuration: 0, // Add holdDuration initialization
+    level: 1,
+    holdDuration: 0,
     tasks: [
-      { id: 1, description: "Catch 50 scorpions in one hold", completed: false, reward: 50 },
-      { id: 2, description: "Hold for a total of 300 seconds", completed: false, reward: 30 },
+      { id: 1, description: 'Catch 50 scorpions in one hold', completed: false, reward: 50 },
+      { id: 2, description: 'Hold for a total of 300 seconds', completed: false, reward: 30 },
     ],
   });
-  
   const [cooldownTimeRemaining, setCooldownTimeRemaining] = useState(0);
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState<number>(0);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [showModal, setShowModal] = useState<boolean>(false); // Show modal for daily reward
-  const [dailyStreak, setDailyStreak] = useState<number>(0); // Track login streak
-  const [dailyReward, setDailyReward] = useState<number>(0); // Track daily reward
-  
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [dailyStreak, setDailyStreak] = useState<number>(0);
+  const [dailyReward, setDailyReward] = useState<number>(0);
 
-  // Initialize player data
+
+  // Initialize player data and daily login reward logic
   useEffect(() => {
-    const initWebApp = async () => {
-      const WebApp = (await import('@twa-dev/sdk')).default;
-      WebApp.ready();
-      const user = WebApp.initDataUnsafe.user as UserData;
-      setUserData(user);
-      const playerData = await getPlayerData(user.id);
+    if (!user || isLoading) return;
+
+    const initializePlayer = async () => {
       if (!playerData) {
-        await initializePlayerData({
+        // Initialize player data if not existing
+        const initialData: PlayerData = {
           id: user.id,
+          username: user.username,
           firstName: user.first_name,
           lastName: user.last_name,
-          username: user.username,
           languageCode: user.language_code,
-          balance: 0,
-          miningLevel: 1,
-          lastHarvestTime: Date.now(),
-          lastExhaustedTime: Date.now(),
-          energy: 100, // Default energy
-          cooldownEndTime: 0,
-          lastLoginDate: new Date().toISOString().split('T')[0], // Track last login date
-          loginStreak: 1, // Start with a 1-day streak
-        });
-        setDailyStreak(1);
-        setDailyReward(calculateDailyReward(1));
-        setShowModal(true); // Show reward modal on first login
-      } else {
-        // Check if the player qualifies for a daily login reward
+          balance: 0, // Initial balance
+          miningLevel: 1, // Initial level
+          energy: 100, // Initial energy
+          lastHarvestTime: Date.now(), // Initialize with current time
+          lastExhaustedTime: Date.now(), // Initialize with current time
+          lastLoginDate: new Date().toISOString().split('T')[0], // Today's date
+          loginStreak: 1, // Initial login streak
+          cooldownEndTime: 0 // Initialize if required
+        };
+
+        await savePlayerData(initialData); // Save the initialized player data
+    setDailyStreak(1);
+    setDailyReward(calculateDailyReward(1));
+    setShowModal(true); // Show reward modal on first login
+  } else {
+        // Check for daily login rewards and update player balance
         await checkDailyLoginReward(playerData);
         setBalance(playerData.balance);
         setState((s) => ({ ...s, energy: playerData.energy }));
 
-        // Check if cooldown is active
+        // Handle cooldown time if it's active
         const now = Date.now();
         if (playerData.cooldownEndTime && playerData.cooldownEndTime > now) {
           const remainingCooldown = Math.floor((playerData.cooldownEndTime - now) / 1000);
@@ -107,8 +91,8 @@ export default function GameComponent() {
       }
     };
 
-    initWebApp();
-  }, []);
+    initializePlayer();
+  }, [user, playerData, isLoading]);
 
   const checkDailyLoginReward = async (playerData: any) => {
     const today = new Date().toISOString().split('T')[0];
@@ -116,37 +100,30 @@ export default function GameComponent() {
 
     if (today !== lastLoginDate) {
       let newLoginStreak = playerData.loginStreak;
-
-      // Continue the streak if last login was yesterday
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
+
       if (new Date(lastLoginDate).toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
-        newLoginStreak = Math.min(newLoginStreak + 1, 30); // Cap at 30 days
+        newLoginStreak = Math.min(newLoginStreak + 1, 30);
       } else {
-        // Reset streak if more than a day passed
         newLoginStreak = 1;
       }
 
-      // Calculate reward based on streak
       const reward = calculateDailyReward(newLoginStreak);
-
-      // Update player data
       playerData.lastLoginDate = today;
       playerData.loginStreak = newLoginStreak;
       playerData.balance += reward;
 
-      // Update player state and show modal
       setDailyStreak(newLoginStreak);
       setDailyReward(reward);
       setShowModal(true);
 
-      await savePlayerData(playerData); // Save updated data to IndexedDB
+      await savePlayerData(playerData);
     }
   };
 
-  // Calculate reward based on login streak
   const calculateDailyReward = (streak: number): number => {
-    return streak * 10; // Example: reward increases by 10 each day
+    return streak * 10;
   };
 
   useEffect(() => {
@@ -164,50 +141,37 @@ export default function GameComponent() {
     if (state.energy > 0 && !state.isHolding) {
       setState((prev) => ({ ...prev, isHolding: true }));
       const startTime = Date.now();
-
+  
       const intervalHandler = async () => {
         const duration = (Date.now() - startTime) / 1000;
-
         const updatedTasks = [...state.tasks];
+  
+        if (!user) {
+          console.error('User is not authenticated');
+          return;
+        }
+  
         for (let i = 0; i < updatedTasks.length; i++) {
           const task = updatedTasks[i];
           if (!task.completed && ((task.id === 2 && duration >= 300) || (task.id === 1 && state.reward + 1 >= 50))) {
             const newBalance = balance + task.reward;
             setBalance(newBalance);
-            await updatePlayerBalance(userData!.id, task.reward);
-            updatedTasks[i] = { ...task, completed: true, reward: 0 }; // Mark as completed
+            await updatePlayerBalance(user.id, task.reward); // Now safe to use 'user.id'
+            updatedTasks[i] = { ...task, completed: true, reward: 0 };
           }
         }
-
-        setState((prev) => {
-          if (prev.energy > 0) {
-            const newState = {
-              ...prev,
-              tasks: updatedTasks,
-              reward: prev.reward + 1,
-              energy: Math.max(prev.energy - 1, 0),
-            };
-            savePlayerData({
-              id: userData!.id,
-              balance,
-              energy: newState.energy,
-              miningLevel: 1, // Update with your current logic
-              lastHarvestTime: Date.now(),
-              lastExhaustedTime: Date.now(),
-              lastLoginDate: '',
-              loginStreak: 0
-            });
-            return newState;
-          } else {
-            handleHoldRelease();
-            return prev;
-          }
-        });
+  
+        setState((prev) => ({
+          ...prev,
+          tasks: updatedTasks,
+          reward: prev.reward + 1,
+          energy: Math.max(prev.energy - 1, 0),
+        }));
       };
-
+  
       holdIntervalRef.current = setInterval(intervalHandler, 1000);
     }
-  };
+  };  
 
   const handleHoldRelease = async () => {
     if (state.isHolding) {
@@ -228,23 +192,22 @@ export default function GameComponent() {
       }));
 
       setBalance(newBalance);
-      const cooldownDuration = 3 * 3600; // 3 hours cooldown
+      const cooldownDuration = 3 * 3600;
       const cooldownEndTime = Date.now() + cooldownDuration * 1000;
       setCooldownTimeRemaining(cooldownDuration);
 
       await savePlayerData({
-        id: userData!.id,
+        ...playerData,
         balance: newBalance,
         energy: state.energy,
-        miningLevel: 1,
-        lastHarvestTime: Date.now(),
-        lastExhaustedTime: Date.now(),
         cooldownEndTime,
-        lastLoginDate: '',
-        loginStreak: 0
       });
     }
   };
+
+  if (isLoading) {
+    return <Preloader />;
+  }
 
   // Format time for cooldown
   const formatTime = (seconds: number) => {

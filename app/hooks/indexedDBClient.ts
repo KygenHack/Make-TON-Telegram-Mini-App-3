@@ -1,5 +1,3 @@
-// botDB.ts
-
 import { openDB } from 'idb';
 import { supabase } from './useSupabase';
 
@@ -25,7 +23,6 @@ export interface PlayerData {
   lastLoginDate: string; // Date of the player's last login
   loginStreak: number; // Current login streak of the player
 }
-
 
 // Open the IndexedDB database and handle version upgrades
 const dbPromise = openDB('ScorpionGameDB', 2, {
@@ -62,7 +59,7 @@ export const savePlayerData = async (playerData: PlayerData): Promise<void> => {
   }
 };
 
-// Debounced version of savePlayerData
+// Debounced version of savePlayerData to prevent frequent updates
 const debouncedSavePlayerData = debounceSave(savePlayerData, 1000);
 
 // Fetch player data from IndexedDB or Supabase
@@ -92,7 +89,7 @@ export const getPlayerData = async (id: number): Promise<PlayerData | undefined>
   return playerData;
 };
 
-// Update only certain fields in the player data and save to Supabase
+// Update only specific fields in the player data and save to Supabase
 export const updatePlayerData = async (id: number, updates: Partial<PlayerData>): Promise<void> => {
   const db = await dbPromise;
   const existingData = await db.get('playerData', id);
@@ -119,7 +116,7 @@ export const updatePlayerBalance = async (id: number, amount: number): Promise<v
   }
 };
 
-// Function to initialize or create new player data if it doesn't exist
+// Initialize or create new player data, including referral handling
 export const initializePlayerData = async (playerData: PlayerData, referrerId?: number): Promise<void> => {
   const existingPlayerData = await getPlayerData(playerData.id);
 
@@ -146,7 +143,7 @@ export const initializePlayerData = async (playerData: PlayerData, referrerId?: 
   }
 };
 
-// Function to get referred players by referrer ID
+// Function to get the referred players by referrer ID
 export const getReferredPlayers = async (referrerId: number): Promise<number[] | undefined> => {
   const referrerData = await getPlayerData(referrerId);
   return referrerData?.referredPlayers || [];
