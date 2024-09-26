@@ -1,4 +1,3 @@
-// File: /app/api/referrals.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/app/hooks/useSupabase';
 
@@ -23,42 +22,38 @@ export async function POST(request: NextRequest) {
 
     if (!existingReferral || existingReferral.length === 0) {
       // Insert new referral if it doesn't exist
+      const { data: user, error: userError } = await supabase
+        .from('players')
+        .select('is_premium')
+        .eq('id', userId)
+        .single();
+
+      if (userError) {
+        throw new Error(userError.message);
+      }
+
+      const scorpionsEarned = user.is_premium ? 10 : 5; // Award based on Premium status
+
       const { error: insertError } = await supabase
         .from('referrals')
-        .insert({ referrer_id: referrerId, referred_id: userId });
+        .insert({ referrer_id: referrerId, referred_id: userId, scorpions_earned: scorpionsEarned });
 
       if (insertError) {
         throw new Error(insertError.message);
       }
 
-      // Update referrer's rewards (scorpion bonus)
-      await supabase.rpc('increment_scorpion_bonus', {
-        telegram_id: referrerId,
-        increment_value: 1, // Update with the appropriate value
+      // Increment the referrer's scorpions balance
+      await supabase.rpc('increment_scorpion_balance', {
+        user_id: referrerId,
+        amount: scorpionsEarned,
       });
 
-      // Calculate and update grand referrer's rewards (scorpion bonus) if applicable
-      const { data: referrerData, error: referrerError } = await supabase
-        .from('players')
-        .select('referrer_id')
-        .eq('telegram_id', referrerId);
-
-      if (referrerError) {
-        throw new Error(referrerError.message);
-      }
-
-      if (referrerData && referrerData.length > 0 && referrerData[0].referrer_id) {
-        const grandReferrerId = referrerData[0].referrer_id;
-        await supabase.rpc('increment_scorpion_bonus', {
-          telegram_id: grandReferrerId,
-          increment_value: 0.25, // Update with the appropriate value for grand referrer
-        });
-      }
+      return NextResponse.json({ success: true, scorpionsEarned });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: 'Referral already exists' });
   } catch (error) {
-    console.error('Error in POST request:', error);
+    console.error('Error processing referral:', error);
     return NextResponse.json({ error: 'Failed to save referral' }, { status: 500 });
   }
 }
@@ -73,14 +68,17 @@ export async function GET(request: NextRequest) {
 
     const { data: referralsData, error: referralsError } = await supabase
       .from('referrals')
-      .select('referred_id')
+      .select('referred_id, scorpions_earned')
       .eq('referrer_id', userId);
 
     if (referralsError) {
       throw new Error(referralsError.message);
     }
 
-    const referrals = referralsData ? referralsData.map((referral: { referred_id: any; }) => referral.referred_id) : [];
+    const referrals = referralsData.map((referral) => ({
+      referredId: referral.referred_id,
+      scorpionsEarned: referral.scorpions_earned,
+    }));
 
     const { data: referrerData, error: referrerError } = await supabase
       .from('referrals')
@@ -96,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ referrals, referrer });
   } catch (error) {
-    console.error('Error in GET request:', error);
+    console.error('Error fetching referrals:', error);
     return NextResponse.json({ error: 'Failed to fetch referrals' }, { status: 500 });
   }
 }
