@@ -278,7 +278,7 @@ export default function TaskComponent() {
                     className={`py-2 px-4 rounded-lg shadow-md ${
                       task.completed || loadingTaskId === task.id
                         ? 'bg-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-green-600 hover:bg-blue-700 text-white'
                     }`}
                   >
                     {task.completed ? 'Done' : loadingTaskId === task.id ? 'Loading...' : 'Claim'}
@@ -333,6 +333,7 @@ export default function TaskComponent() {
                         >
                           {task.completed ? 'Done' : 'Complete Task'}
                         </Button>
+                        
                       </div>
                     </Placeholder>
                   </Modal>
