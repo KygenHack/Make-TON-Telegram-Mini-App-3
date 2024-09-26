@@ -1,48 +1,60 @@
 import { useState, useEffect } from 'react';
 import { initUtils } from '@telegram-apps/sdk';
-import { Modal, Placeholder, Button, Title } from '@telegram-apps/telegram-ui';
+import { Modal, Placeholder, Title } from '@telegram-apps/telegram-ui';
 import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
 import { ModalClose } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalClose/ModalClose';
 
 interface ReferralSystemProps {
   initData: string;
   userId: string;
-  startParam: string;
+  startParam: string; // Referrer ID
 }
 
 const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, startParam }) => {
-  const [referrals, setReferrals] = useState<{ referredId: string, scorpionsEarned: number }[]>([]);
+  const [referrals, setReferrals] = useState<{ referredId: string; scorpionsEarned: number }[]>([]);
   const [referrer, setReferrer] = useState<string | null>(null);
   const [scorpionsEarned, setScorpionsEarned] = useState(0);
   const [isModalOpen, setModalOpen] = useState(false);
   const INVITE_URL = 'https://t.me/scorpion_world_bot/start';
 
   useEffect(() => {
-    const checkReferral = async () => {
-      if (startParam && userId) {
-        try {
-          const response = await fetch('/api/referrals', {
+    const initializePlayer = async () => {
+      try {
+        // Initialize player and send initData
+        const playerResponse = await fetch('/api/initPlayer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData }),
+        });
+
+        if (!playerResponse.ok) {
+          throw new Error('Failed to initialize player');
+        }
+
+        // Handle referral if there's a referrer (startParam)
+        if (startParam && userId) {
+          const referralResponse = await fetch('/api/referrals', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, referrerId: startParam }),
           });
 
-          if (!response.ok) throw new Error('Failed to save referral');
-          const data = await response.json();
+          if (!referralResponse.ok) throw new Error('Failed to save referral');
 
-          // Add scorpions earned to the user's balance
-          setScorpionsEarned(data.scorpionsEarned);
-        } catch (error) {
-          console.error('Error saving referral:', error);
+          const referralData = await referralResponse.json();
+          setScorpionsEarned(referralData.scorpionsEarned);
         }
+      } catch (error) {
+        console.error('Error during initialization:', error);
       }
     };
 
     const fetchReferrals = async () => {
       try {
-        const response = await fetch(`/api/referrals?userId=${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch referrals');
-        const data = await response.json();
+        const referralResponse = await fetch(`/api/referrals?userId=${userId}`);
+        if (!referralResponse.ok) throw new Error('Failed to fetch referrals');
+        
+        const data = await referralResponse.json();
         setReferrals(data.referrals);
         setReferrer(data.referrer);
       } catch (error) {
@@ -50,9 +62,9 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       }
     };
 
-    checkReferral();
+    initializePlayer();
     fetchReferrals();
-  }, [userId, startParam]);
+  }, [initData, userId, startParam]);
 
   const handleInviteFriend = () => {
     const utils = initUtils();
@@ -65,7 +77,6 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
   const handleCopyLink = () => {
     const inviteLink = `${INVITE_URL}?startapp=${userId}`;
     navigator.clipboard.writeText(inviteLink);
-
     setModalOpen(true); // Open the modal
   };
 
@@ -86,13 +97,13 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
         </p>
 
         <div className="flex justify-center">
-        <div className="text-center">
-          <Title caps level="1" weight="1" className="text-5xl text-white">
-          {scorpionsEarned}
-          </Title>
-          <p className="text-lg text-[#f48d2f]">Scorpion Earned</p>
+          <div className="text-center">
+            <Title caps level="1" weight="1" className="text-5xl text-white">
+              {scorpionsEarned}
+            </Title>
+            <p className="text-lg text-[#f48d2f]">Scorpions Earned</p>
+          </div>
         </div>
-      </div>
 
         <div className="space-y-4 mt-4">
           <button
@@ -112,7 +123,9 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
 
       <div className="flex item-center justify-between mt-6">
         <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Friends</h2>
-        <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referrals.length}</strong></p>
+        <p className="text-lg text-[#f48d2f] font-bold mb-4">
+          Total Referrals: <strong>{referrals.length}</strong>
+        </p>
       </div>
 
       {referrals.length > 0 && (
