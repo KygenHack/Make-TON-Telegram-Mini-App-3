@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initUtils } from '@telegram-apps/sdk';
-import { Modal, Placeholder } from '@telegram-apps/telegram-ui'; // Import required components
+import { Modal, Placeholder, Button } from '@telegram-apps/telegram-ui'; // Import required components
 import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
 import { ModalClose } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalClose/ModalClose';
 
@@ -72,10 +72,6 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
     setModalOpen(true);
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
-  };
-
   return (
     <div className="text-primaryLight p-6 rounded-lg shadow-custom max-w-md mx-auto">
       {referrer && (
@@ -125,12 +121,12 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       {/* Modal for notification */}
       <Modal
         header={
-          <ModalHeader after={<ModalClose>x</ModalClose>}>
+          <ModalHeader after={<ModalClose>Close</ModalClose>}>
             Notification
           </ModalHeader>
         }
-        trigger={null}
-        open={isModalOpen}  // Open prop to control modal visibility
+        open={isModalOpen}  // Control the modal visibility with state
+        onOpenChange={(open) => setModalOpen(open)} // Handle the modal open/close state
       >
         <Placeholder
           description="Invite link copied to clipboard!"
