@@ -90,11 +90,11 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
           <Title caps level="1" weight="1" className="text-5xl text-white">
           {scorpionsEarned}
           </Title>
-          <p className="text-lg text-[#f48d2f]">Complete tasks to earn Scorpion rewards</p>
+          <p className="text-lg text-[#f48d2f]">Scorpion Earned</p>
         </div>
       </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 mt-4">
           <button
             onClick={handleInviteFriend}
             className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full transition duration-300"
