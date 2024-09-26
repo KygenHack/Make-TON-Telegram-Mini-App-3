@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initUtils } from '@telegram-apps/sdk';
-import { Modal, Placeholder, Button } from '@telegram-apps/telegram-ui'; // Import required components
+import { Modal, Placeholder, Button } from '@telegram-apps/telegram-ui';
 import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
 import { ModalClose } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalClose/ModalClose';
 
@@ -11,16 +11,11 @@ interface ReferralSystemProps {
 }
 
 const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, startParam }) => {
-  const [referrals, setReferrals] = useState<string[]>([]);
+  const [referrals, setReferrals] = useState<{ referredId: string, scorpionsEarned: number }[]>([]);
   const [referrer, setReferrer] = useState<string | null>(null);
-  const [referralCount, setReferralCount] = useState(0);
-  const [isModalOpen, setModalOpen] = useState(false);  // Control modal visibility
+  const [scorpionsEarned, setScorpionsEarned] = useState(0);
+  const [isModalOpen, setModalOpen] = useState(false);
   const INVITE_URL = 'https://t.me/scorpion_world_bot/start';
-
-  useEffect(() => {
-    // Calculate total referral count
-    setReferralCount(referrals.length);
-  }, [referrals]);
 
   useEffect(() => {
     const checkReferral = async () => {
@@ -31,7 +26,12 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, referrerId: startParam }),
           });
+
           if (!response.ok) throw new Error('Failed to save referral');
+          const data = await response.json();
+
+          // Add scorpions earned to the user's balance
+          setScorpionsEarned(data.scorpionsEarned);
         } catch (error) {
           console.error('Error saving referral:', error);
         }
@@ -39,16 +39,14 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
     };
 
     const fetchReferrals = async () => {
-      if (userId) {
-        try {
-          const response = await fetch(`/api/referrals?userId=${userId}`);
-          if (!response.ok) throw new Error('Failed to fetch referrals');
-          const data = await response.json();
-          setReferrals(data.referrals);
-          setReferrer(data.referrer);
-        } catch (error) {
-          console.error('Error fetching referrals:', error);
-        }
+      try {
+        const response = await fetch(`/api/referrals?userId=${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch referrals');
+        const data = await response.json();
+        setReferrals(data.referrals);
+        setReferrer(data.referrer);
+      } catch (error) {
+        console.error('Error fetching referrals:', error);
       }
     };
 
@@ -68,8 +66,7 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
     const inviteLink = `${INVITE_URL}?startapp=${userId}`;
     navigator.clipboard.writeText(inviteLink);
 
-    // Open the modal instead of using alert
-    setModalOpen(true);
+    setModalOpen(true); // Open the modal
   };
 
   return (
@@ -79,10 +76,10 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       )}
 
       <div className="text-center">
-        <h2 className="text-2xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
+        <h2 className="text-2xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Friends</h2>
 
         <p className="text-[#f48d2f] mb-6">
-          Invite your friends and both of you will receive bonuses.{' '}
+          Invite your friends and earn Scorpions.{' '}
           <a href="#" className="text-blue-400 underline">
             How it works?
           </a>
@@ -104,19 +101,23 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       </div>
 
       <div className="flex item-center justify-between mt-6">
-        <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Frens</h2>
-        <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
+        <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Friends</h2>
+        <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referrals.length}</strong></p>
       </div>
 
       {referrals.length > 0 && (
         <ul>
           {referrals.map((referral, index) => (
             <li key={index} className="bg-gray-800 p-2 mb-2 rounded">
-              {referral}
+              Referred User ID: {referral.referredId}, Scorpions Earned: {referral.scorpionsEarned}
             </li>
           ))}
         </ul>
       )}
+
+      <p className="text-lg text-green-400 font-bold mt-6">
+        Total Scorpions Earned: {scorpionsEarned}
+      </p>
 
       {/* Modal for notification */}
       <Modal
@@ -125,8 +126,8 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
             Notification
           </ModalHeader>
         }
-        open={isModalOpen}  // Control the modal visibility with state
-        onOpenChange={(open) => setModalOpen(open)} // Handle the modal open/close state
+        open={isModalOpen}
+        onOpenChange={(open) => setModalOpen(open)}
       >
         <Placeholder
           description="Invite link copied to clipboard!"
