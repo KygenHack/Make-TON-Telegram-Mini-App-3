@@ -11,37 +11,21 @@ const ReferralSystem: React.FC = () => {
   // Use the useAuth hook to get the authenticated user and player data
   const { user, playerData, isLoading } = useAuth();
 
+  // Fetch referrals only once when the component is mounted or playerData is updated
   useEffect(() => {
-    if (!isLoading && playerData) {
-      // Calculate total referral count
-      setReferralCount(referrals.length);
-    }
-  }, [referrals, playerData, isLoading]);
-
-  useEffect(() => {
-    const checkReferral = async () => {
-      if (playerData?.id) {
-        try {
-          const response = await fetch('/api/referrals', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: playerData.id, referrerId: user?.id }), // Using playerData.id and user.id
-          });
-          if (!response.ok) throw new Error('Failed to save referral');
-        } catch (error) {
-          console.error('Error saving referral:', error);
-        }
-      }
-    };
-
     const fetchReferrals = async () => {
       if (playerData?.id) {
         try {
           const response = await fetch(`/api/referrals?userId=${playerData.id}`);
           if (!response.ok) throw new Error('Failed to fetch referrals');
           const data = await response.json();
+
+          // Avoid duplicate referrals
           setReferrals(data.referrals);
           setReferrer(data.referrer);
+
+          // Set referral count based on unique referrals only
+          setReferralCount(new Set(data.referrals).size);
         } catch (error) {
           console.error('Error fetching referrals:', error);
         }
@@ -49,23 +33,31 @@ const ReferralSystem: React.FC = () => {
     };
 
     if (!isLoading && playerData?.id) {
-      checkReferral();
       fetchReferrals();
     }
-  }, [playerData, isLoading, user]);
+  }, [playerData, isLoading]);
 
   const handleInviteFriend = () => {
     const utils = initUtils();
     const inviteLink = `${INVITE_URL}?startapp=${playerData?.id}`;
     const shareText = `Join me on this awesome Telegram mini app!`;
     const fullUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
-    utils.openTelegramLink(fullUrl);
+
+    // Ensure utils is initialized correctly
+    if (utils) {
+      utils.openTelegramLink(fullUrl);
+    } else {
+      console.error('Telegram utils not initialized properly');
+    }
   };
 
   const handleCopyLink = () => {
     const inviteLink = `${INVITE_URL}?startapp=${playerData?.id}`;
-    navigator.clipboard.writeText(inviteLink);
-    alert('Invite link copied to clipboard!');
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      alert('Invite link copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy link: ', err);
+    });
   };
 
   if (isLoading) {
@@ -82,11 +74,11 @@ const ReferralSystem: React.FC = () => {
         <h2 className="text-3xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
         
         <p className="text-[#f48d2f] mb-6">
-          Invite your friends and both of you will receive bonuses. Score 10% from buddies + 2.5% from their referrals
+          Invite your friends and both of you will receive bonuses. Score 10% from buddies + 2.5% from their referrals.
         </p>
       </div>
 
-      <div className="flex item-center justify-between mt-6">
+      <div className="flex items-center justify-between mt-6">
         <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Frens</h2>
         <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
       </div>
