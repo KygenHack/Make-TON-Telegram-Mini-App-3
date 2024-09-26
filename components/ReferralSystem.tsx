@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initUtils } from '@telegram-apps/sdk';
+import ModalPrompt from './ModalPrompt'; // Import the modal component
 
 interface ReferralSystemProps {
   initData: string;
@@ -10,14 +11,15 @@ interface ReferralSystemProps {
 const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, startParam }) => {
   const [referrals, setReferrals] = useState<string[]>([]);
   const [referrer, setReferrer] = useState<string | null>(null);
-  const [referralCount, setReferralCount] = useState(0); 
+  const [referralCount, setReferralCount] = useState(0);
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
   const INVITE_URL = 'https://t.me/scorpion_world_bot/start';
 
   useEffect(() => {
     // Calculate total referral count
-    setReferralCount(referrals.length); 
+    setReferralCount(referrals.length);
   }, [referrals]);
-
 
   useEffect(() => {
     const checkReferral = async () => {
@@ -64,7 +66,14 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
   const handleCopyLink = () => {
     const inviteLink = `${INVITE_URL}?startapp=${userId}`;
     navigator.clipboard.writeText(inviteLink);
-    alert('Invite link copied to clipboard!');
+
+    // Instead of alert, show the modal with a message
+    setModalMessage('Invite link copied to clipboard!');
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
   };
 
   return (
@@ -74,9 +83,9 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       )}
 
       <div className="text-center">
-      <h2 className="text-2xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
+        <h2 className="text-2xl text-[#f48d2f] font-bold mb-2">👨‍👩‍👧‍👦 Invite Frens</h2>
 
-      <p className="text-[#f48d2f] mb-6">
+        <p className="text-[#f48d2f] mb-6">
           Invite your friends and both of you will receive bonuses.{' '}
           <a href="#" className="text-blue-400 underline">
             How it works?
@@ -99,18 +108,26 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       </div>
 
       <div className="flex item-center justify-between mt-6">
-          <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Frens</h2>
-          <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
-        </div>
+        <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Frens</h2>
+        <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
+      </div>
+
       {referrals.length > 0 && (
-          <ul>
-            {referrals.map((referral, index) => (
-              <li key={index} className="bg-gray-800 p-2 mb-2 rounded">
-                {referral}
-              </li>
-            ))}
-          </ul>
+        <ul>
+          {referrals.map((referral, index) => (
+            <li key={index} className="bg-gray-800 p-2 mb-2 rounded">
+              {referral}
+            </li>
+          ))}
+        </ul>
       )}
+
+      {/* Modal for notification */}
+      <ModalPrompt
+        isOpen={isModalOpen}
+        message={modalMessage}
+        onClose={closeModal}
+      />
     </div>
   );
 };
