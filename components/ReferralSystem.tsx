@@ -99,8 +99,8 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       </div>
 
       <div className="flex item-center justify-between mt-6">
-          <h2 className="text-lg text-black font-bold mb-4">Your Frens</h2>
-          <p className="text-lg text-black font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
+          <h2 className="text-lg text-[#f48d2f] font-bold mb-4">Your Frens</h2>
+          <p className="text-lg text-[#f48d2f] font-bold mb-4">Total Referrals: <strong>{referralCount}</strong></p> 
         </div>
       {referrals.length > 0 && (
           <ul>
