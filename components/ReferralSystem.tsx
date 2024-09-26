@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initUtils } from '@telegram-apps/sdk';
-import { Modal, Placeholder, Button } from '@telegram-apps/telegram-ui';
+import { Modal, Placeholder, Button, Title } from '@telegram-apps/telegram-ui';
 import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
 import { ModalClose } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalClose/ModalClose';
 
@@ -84,6 +84,16 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
             How it works?
           </a>
         </p>
+
+        <div className="flex justify-center">
+        <div className="text-center">
+          <Title caps level="1" weight="1" className="text-5xl text-white">
+          {scorpionsEarned}
+          </Title>
+          <p className="text-lg text-[#f48d2f]">Complete tasks to earn Scorpion rewards</p>
+        </div>
+      </div>
+
         <div className="space-y-4">
           <button
             onClick={handleInviteFriend}
@@ -114,10 +124,6 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
           ))}
         </ul>
       )}
-
-      <p className="text-lg text-green-400 font-bold mt-6">
-        Total Scorpions Earned: {scorpionsEarned}
-      </p>
 
       {/* Modal for notification */}
       <Modal
