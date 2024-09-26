@@ -1,14 +1,16 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { validate } from '@telegram-apps/init-data-node';
 import { supabase } from '@/app/hooks/useSupabase';
 
 const secretToken = process.env.BOTAPI!;
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { initData } = req.body;
+export const POST = async (req: Request) => {
+  const { initData } = await req.json(); // Use req.json() to parse the request body
 
   if (!initData) {
-    return res.status(400).json({ error: 'Missing initData' });
+    return new Response(JSON.stringify({ error: 'Missing initData' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -38,13 +40,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error(error.message);
     }
 
-    return res.status(200).json({ message: 'Player data initialized', playerData });
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Error initializing player data:', error.message);
-    } else {
-      console.error('Unknown error:', error);
-    }
-    return res.status(500).json({ error: 'Failed to initialize player data' });
+    return new Response(
+      JSON.stringify({ message: 'Player data initialized', playerData }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error: any) {
+    console.error('Error initializing player data:', error.message);
+    return new Response(
+      JSON.stringify({ error: 'Failed to initialize player data' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
-}
+};
