@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { initUtils } from '@telegram-apps/sdk';
-import ModalPrompt from './ModalPrompt'; // Import the modal component
+import { Modal, Placeholder } from '@telegram-apps/telegram-ui'; // Import required components
+import { ModalHeader } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalHeader/ModalHeader';
+import { ModalClose } from '@telegram-apps/telegram-ui/dist/components/Overlays/Modal/components/ModalClose/ModalClose';
 
 interface ReferralSystemProps {
   initData: string;
@@ -12,8 +14,7 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
   const [referrals, setReferrals] = useState<string[]>([]);
   const [referrer, setReferrer] = useState<string | null>(null);
   const [referralCount, setReferralCount] = useState(0);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
+  const [isModalOpen, setModalOpen] = useState(false);  // Control modal visibility
   const INVITE_URL = 'https://t.me/scorpion_world_bot/start';
 
   useEffect(() => {
@@ -67,8 +68,7 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
     const inviteLink = `${INVITE_URL}?startapp=${userId}`;
     navigator.clipboard.writeText(inviteLink);
 
-    // Instead of alert, show the modal with a message
-    setModalMessage('Invite link copied to clipboard!');
+    // Open the modal instead of using alert
     setModalOpen(true);
   };
 
@@ -123,11 +123,31 @@ const ReferralSystem: React.FC<ReferralSystemProps> = ({ initData, userId, start
       )}
 
       {/* Modal for notification */}
-      <ModalPrompt
-        isOpen={isModalOpen}
-        message={modalMessage}
-        onClose={closeModal}
-      />
+      <Modal
+        header={
+          <ModalHeader after={<ModalClose>x</ModalClose>}>
+            Notification
+          </ModalHeader>
+        }
+        trigger={null}
+        open={isModalOpen}  // Open prop to control modal visibility
+      >
+        <Placeholder
+          description="Invite link copied to clipboard!"
+          header="Success!"
+        >
+          <img
+            alt="Telegram sticker"
+            src="https://xelene.me/telegram.gif"
+            style={{
+              display: 'block',
+              height: '144px',
+              width: '144px',
+              margin: '0 auto',
+            }}
+          />
+        </Placeholder>
+      </Modal>
     </div>
   );
 };
