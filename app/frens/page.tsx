@@ -2,8 +2,6 @@
 
 import GameComponent from '@/components/GameComponent';
 import NavBar from '@/components/NavBar';
-import ReferralSystem from '@/components/ReferralSystem';
-import TaskComponent from '@/components/TaskComponent';
 import WebApp from '@twa-dev/sdk';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
@@ -49,6 +47,8 @@ function ReferralPage() {
   }, []);
 
   const NavTop = dynamic(() => import('@/components/NavTop'), { ssr: false });
+  const ReferralSystem = dynamic(() => import('@/components/ReferralSystem'), { ssr: false });
+
 
   return (
     <>
